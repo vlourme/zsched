@@ -1,4 +1,11 @@
-import { useLoaderData } from "react-router";
+import { redirect, useLoaderData } from "react-router";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "~/components/ui/card";
 import {
   Table,
   TableBody,
@@ -21,6 +28,9 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader({ params }: Route.LoaderArgs) {
+  const task = await pool.query(`SELECT state FROM tasks WHERE task_id = $1`, [
+    params.task_id,
+  ]);
   const logs = await pool.query(
     `
     SELECT task_id, state_id, level, message, data, logged_at FROM logs WHERE task_id = $1 ORDER BY logged_at DESC
@@ -28,13 +38,18 @@ export async function loader({ params }: Route.LoaderArgs) {
     [params.task_id]
   );
 
+  if (task.rows.length === 0) {
+    return redirect("/tasks");
+  }
+
   return {
+    parameters: JSON.parse(task.rows[0].state),
     logs: logs.rows,
   };
 }
 
 export default function Logs() {
-  const { logs } = useLoaderData<typeof loader>();
+  const { logs, parameters } = useLoaderData<typeof loader>();
 
   return (
     <>
@@ -43,11 +58,25 @@ export default function Logs() {
         <p className="text-muted-foreground">Logs for the task.</p>
       </div>
 
-      <div className="bg-foreground/5 rounded-lg">
-        <div className="flex flex-wrap items-center p-4 gap-4">
-          <h2 className="text-lg font-bold">Logs</h2>
-        </div>
-        <div className="overflow-hidden border-t">
+      <Card>
+        <CardHeader>
+          <CardTitle>Task parameters</CardTitle>
+          <CardDescription>
+            This task was started with the following parameters.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <pre className="text-sm font-mono">
+            {JSON.stringify(parameters, null, 2)}
+          </pre>
+        </CardContent>
+      </Card>
+
+      <Card className="pb-0 gap-4">
+        <CardHeader>
+          <CardTitle>Logs</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
           <Table>
             <TableHeader>
               <TableRow className="bg-foreground/5">
@@ -82,8 +111,8 @@ export default function Logs() {
               )}
             </TableBody>
           </Table>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </>
   );
 }
