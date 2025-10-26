@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -27,6 +28,27 @@ var helloTask = task.NewTask(
 	// task.WithSchedule("*/30 * * * * *", map[string]any{"name": "Carl"}),
 )
 
+var sumTask = task.NewTask(
+	"sum",
+	func(ctx *ctx.C) error {
+		a := ctx.Get("a").Int()
+		b := ctx.Get("b").Int()
+
+		ctx.Push(a + b)
+		fmt.Println("pushed result: ", a+b)
+		return nil
+	},
+	task.WithCollector(func(collector ctx.Collector) {
+		fmt.Println("collector: ", collector)
+		total := 0
+
+		for result := range collector.Channel() {
+			total += result.(int)
+			fmt.Println("pulled result: ", result, "total: ", total)
+		}
+	}, 2),
+)
+
 type UserCtx struct {
 	Name string
 }
@@ -48,6 +70,6 @@ func main() {
 		panic(err)
 	}
 
-	engine.Register(helloTask)
+	engine.Register(helloTask, sumTask)
 	engine.Start()
 }

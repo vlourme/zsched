@@ -1,18 +1,12 @@
 package ctx
 
 import (
+	"log"
+
 	"github.com/sirupsen/logrus"
 	"github.com/vlourme/zsched/pkg/logger"
 	"github.com/vlourme/zsched/pkg/state"
 )
-
-type Task interface {
-	// Execute the same task with parameters, pass a state to log as children task
-	Execute(params map[string]any, state ...*state.State) error
-
-	// Task name in the queue
-	Name() string
-}
 
 type C struct {
 	logger.Logger
@@ -38,6 +32,16 @@ func New(log logger.Logger, task Task, state state.State, userContext any) *C {
 // Execute starts a new task of the same job, with different parameters
 func (c *C) Execute(params map[string]any) error {
 	return c.task.Execute(params, &c.State)
+}
+
+// Push pushes a value to the collector
+func (c *C) Push(value any) {
+	if c.task.Collector() == nil {
+		log.Printf("task %s has no collector", c.task.Name())
+		return
+	}
+
+	c.task.Collector().Push(value)
 }
 
 // UserContext returns the user context of the task

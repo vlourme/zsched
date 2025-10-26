@@ -34,6 +34,12 @@ type Task struct {
 	// Action to be performed by the task
 	Action TaskAction `json:"-"`
 
+	// CollectorAction is the action to be performed by the collector
+	CollectorAction TaskCollectorAction `json:"-"`
+
+	// collector is the collector for the task
+	collector *Collector `json:"-"`
+
 	// Concurrency of the task
 	// The number of concurrent instances of the task that can run at the same time
 	Concurrency int `json:"concurrency"`
@@ -52,11 +58,13 @@ type Task struct {
 // NewTask creates a new task
 func NewTask(name string, action TaskAction, options ...func(*Task)) *Task {
 	t := &Task{
-		TaskName:    name,
-		Action:      action,
-		Concurrency: 1,
-		MaxRetries:  3,
-		Schedules:   make([]TaskSchedule, 0),
+		TaskName:        name,
+		Action:          action,
+		CollectorAction: nil,
+		collector:       nil,
+		Concurrency:     1,
+		MaxRetries:      3,
+		Schedules:       make([]TaskSchedule, 0),
 	}
 
 	for _, option := range options {
@@ -83,6 +91,11 @@ func (t *Task) Name() string {
 	return nameRegex.ReplaceAllString(t.TaskName, "")
 }
 
+// Collector returns the collector for the task
+func (t *Task) Collector() ctx.Collector {
+	return t.collector
+}
+
 // WithConcurrency sets the concurrency for the task
 func WithConcurrency(concurrency int) func(*Task) {
 	return func(t *Task) {
@@ -94,6 +107,14 @@ func WithConcurrency(concurrency int) func(*Task) {
 func WithMaxRetries(maxRetries int) func(*Task) {
 	return func(t *Task) {
 		t.MaxRetries = maxRetries
+	}
+}
+
+// WithCollector sets the collector for the task with optional buffer size
+func WithCollector(collector TaskCollectorAction, bufferSize ...int) func(*Task) {
+	return func(t *Task) {
+		t.collector = NewCollector(bufferSize...)
+		t.CollectorAction = collector
 	}
 }
 
