@@ -7,8 +7,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/vlourme/scheduler/pkg/state"
-	"github.com/vlourme/scheduler/pkg/task"
+	"github.com/vlourme/zsched/pkg/state"
+	"github.com/vlourme/zsched/pkg/task"
 )
 
 type PrometheusHook struct {

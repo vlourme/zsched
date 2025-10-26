@@ -2,8 +2,8 @@ package api
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/vlourme/scheduler/pkg/storage"
-	"github.com/vlourme/scheduler/pkg/task"
+	"github.com/vlourme/zsched/pkg/storage"
+	"github.com/vlourme/zsched/pkg/task"
 )
 
 type RegisterFn = func(router *gin.Engine)

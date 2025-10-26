@@ -1,8 +1,8 @@
 package hooks
 
 import (
-	"github.com/vlourme/scheduler/pkg/state"
-	"github.com/vlourme/scheduler/pkg/task"
+	"github.com/vlourme/zsched/pkg/state"
+	"github.com/vlourme/zsched/pkg/task"
 )
 
 // Hook is the interface for the hooks

@@ -7,13 +7,13 @@ import (
 	"sync"
 
 	"github.com/robfig/cron/v3"
-	"github.com/vlourme/scheduler/pkg/api"
-	"github.com/vlourme/scheduler/pkg/broker"
-	"github.com/vlourme/scheduler/pkg/executor"
-	"github.com/vlourme/scheduler/pkg/hooks"
-	"github.com/vlourme/scheduler/pkg/logger"
-	"github.com/vlourme/scheduler/pkg/storage"
-	"github.com/vlourme/scheduler/pkg/task"
+	"github.com/vlourme/zsched/pkg/api"
+	"github.com/vlourme/zsched/pkg/broker"
+	"github.com/vlourme/zsched/pkg/executor"
+	"github.com/vlourme/zsched/pkg/hooks"
+	"github.com/vlourme/zsched/pkg/logger"
+	"github.com/vlourme/zsched/pkg/storage"
+	"github.com/vlourme/zsched/pkg/task"
 )
 
 // Scheduler is the scheduler for the tasks

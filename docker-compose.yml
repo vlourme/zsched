@@ -7,10 +7,16 @@ services:
     networks:
       - zsched-network
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     volumes:
       - lavinmq_data:/var/lib/lavinmq
+    healthcheck:
+      test: ["CMD", "lavinmqctl", "status"]
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 2s
 
   questdb:
     image: questdb/questdb:9.1.0
@@ -26,14 +32,19 @@ services:
     build:
       context: ./
       dockerfile: ./example/Dockerfile
+    ports:
+      - 2112:2112
+      - 8080:8080
     networks:
       - zsched-network
     environment:
-      - RABBITMQ_URL=amqp://guest:guest@lavinmq:5672/
-      - QUESTDB_URL=postgres://admin:quest@questdb:8812/qdb?sslmode=disable
+      RABBITMQ_URL: amqp://guest:guest@lavinmq:5672/
+      QUESTDB_URL: postgres://admin:quest@questdb:8812/qdb?sslmode=disable
     depends_on:
-      - lavinmq
-      - questdb
+      lavinmq:
+        condition: service_healthy
+      questdb:
+        condition: service_started
 
   dashboard:
     build:
@@ -44,11 +55,11 @@ services:
     networks:
       - zsched-network
     environment:
-      - LAVINMQ_API=http://lavinmq:15672
-      - LAVINMQ_USERNAME=guest
-      - LAVINMQ_PASSWORD=guest
-      - ZSCHED_URL=http://scheduler:8080
-      - DATABASE_URL=postgres://admin:quest@questdb:8812/qdb?sslmode=disable
+      LAVINMQ_API: http://lavinmq:15672
+      LAVINMQ_USERNAME: guest
+      LAVINMQ_PASSWORD: guest
+      ZSCHED_URL: http://scheduler:8080
+      DATABASE_URL: postgres://admin:quest@questdb:8812/qdb?sslmode=disable
     depends_on:
       - lavinmq
       - questdb

@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vlourme/scheduler/pkg/storage"
+	"github.com/vlourme/zsched/pkg/storage"
 )
 
 type Logger = *logrus.Entry

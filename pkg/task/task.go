@@ -3,8 +3,8 @@ package task
 import (
 	"regexp"
 
-	"github.com/vlourme/scheduler/pkg/ctx"
-	"github.com/vlourme/scheduler/pkg/state"
+	"github.com/vlourme/zsched/pkg/ctx"
+	"github.com/vlourme/zsched/pkg/state"
 )
 
 // nameRegex is the regex to validate the task name

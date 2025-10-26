@@ -5,12 +5,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/vlourme/scheduler/pkg/broker"
-	"github.com/vlourme/scheduler/pkg/ctx"
-	"github.com/vlourme/scheduler/pkg/hooks"
-	"github.com/vlourme/scheduler/pkg/logger"
-	"github.com/vlourme/scheduler/pkg/state"
-	"github.com/vlourme/scheduler/pkg/task"
+	"github.com/vlourme/zsched/pkg/broker"
+	"github.com/vlourme/zsched/pkg/ctx"
+	"github.com/vlourme/zsched/pkg/hooks"
+	"github.com/vlourme/zsched/pkg/logger"
+	"github.com/vlourme/zsched/pkg/state"
+	"github.com/vlourme/zsched/pkg/task"
 )
 
 // Executor is the executor for the tasks

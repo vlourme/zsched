@@ -6,7 +6,7 @@ import (
 	"log"
 
 	"github.com/sirupsen/logrus"
-	"github.com/vlourme/scheduler/pkg/storage"
+	"github.com/vlourme/zsched/pkg/storage"
 )
 
 type QuestDBHook struct {

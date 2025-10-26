@@ -4,17 +4,17 @@ import (
 	"os"
 	"time"
 
-	"github.com/vlourme/scheduler/pkg/ctx"
-	"github.com/vlourme/scheduler/pkg/engine"
-	"github.com/vlourme/scheduler/pkg/hooks"
-	"github.com/vlourme/scheduler/pkg/task"
+	"github.com/vlourme/zsched/pkg/ctx"
+	"github.com/vlourme/zsched/pkg/engine"
+	"github.com/vlourme/zsched/pkg/hooks"
+	"github.com/vlourme/zsched/pkg/task"
 )
 
 var helloTask = task.NewTask(
 	"hello",
 	func(ctx *ctx.C) error {
 		uc := ctx.UserContext().(*UserCtx)
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(5000 * time.Millisecond)
 
 		ctx.Infoln("Hello " + ctx.Get("name").String() + " from " + uc.Name + "!")
 
@@ -22,7 +22,7 @@ var helloTask = task.NewTask(
 	},
 	task.WithConcurrency(10),
 	task.WithMaxRetries(3),
-	task.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
+	// task.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
 	// task.WithSchedule("*/20 * * * * *", map[string]any{"name": "Mike"}),
 	// task.WithSchedule("*/30 * * * * *", map[string]any{"name": "Carl"}),
 )
@@ -39,7 +39,7 @@ func main() {
 	engine, err := engine.NewEngine(
 		engine.WithRabbitMQBroker(os.Getenv("RABBITMQ_URL")),
 		engine.WithQuestDBStorage(os.Getenv("QUESTDB_URL")),
-		engine.WithAPI("0.0.0.0:8080"),
+		engine.WithAPI(":8080"),
 		engine.WithUserContext(&userCtx),
 		engine.WithHooks(hooks.NewPrometheusHook()),
 	)

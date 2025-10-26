@@ -2,8 +2,8 @@ package ctx
 
 import (
 	"github.com/sirupsen/logrus"
-	"github.com/vlourme/scheduler/pkg/logger"
-	"github.com/vlourme/scheduler/pkg/state"
+	"github.com/vlourme/zsched/pkg/logger"
+	"github.com/vlourme/zsched/pkg/state"
 )
 
 type Task interface {

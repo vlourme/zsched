@@ -3,10 +3,10 @@ package engine
 import (
 	"log"
 
-	"github.com/vlourme/scheduler/pkg/broker"
-	"github.com/vlourme/scheduler/pkg/hooks"
-	"github.com/vlourme/scheduler/pkg/logger"
-	"github.com/vlourme/scheduler/pkg/storage"
+	"github.com/vlourme/zsched/pkg/broker"
+	"github.com/vlourme/zsched/pkg/hooks"
+	"github.com/vlourme/zsched/pkg/logger"
+	"github.com/vlourme/zsched/pkg/storage"
 )
 
 // WithRabbitMQBroker creates a new RabbitMQ broker and sets it as the engine's broker

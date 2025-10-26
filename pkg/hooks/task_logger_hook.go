@@ -4,9 +4,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/vlourme/scheduler/pkg/state"
-	"github.com/vlourme/scheduler/pkg/storage"
-	"github.com/vlourme/scheduler/pkg/task"
+	"github.com/vlourme/zsched/pkg/state"
+	"github.com/vlourme/zsched/pkg/storage"
+	"github.com/vlourme/zsched/pkg/task"
 )
 
 type TaskLoggerHook struct {
