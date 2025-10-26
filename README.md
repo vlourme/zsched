@@ -1,5 +1,7 @@
 # zsched
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/vlourme/zsched.svg)](https://pkg.go.dev/github.com/vlourme/zsched)
+
 A lightweight, opinionated mix of a queue system and task orchestrator built in and for Go, using QuestDB and AMQP broker. Designed for simplicity and performance.
 
 ![Web UI](media/screenshot.png)
