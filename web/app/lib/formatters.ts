@@ -2,7 +2,7 @@ export const formatDuration = (duration: number) => {
   const days = Math.floor(duration / 86400);
   const hours = Math.floor((duration % 86400) / 3600);
   const minutes = Math.floor((duration % 3600) / 60);
-  const seconds = duration % 60;
+  const seconds = Math.round((duration % 60) * 10) / 10;
 
   const parts = [];
   if (days > 0) parts.push(`${days}d`);

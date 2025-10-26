@@ -90,7 +90,7 @@ export default function Logs() {
             <TableBody>
               {logs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No logs found.
                   </TableCell>
                 </TableRow>
