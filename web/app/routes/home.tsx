@@ -36,7 +36,7 @@ export async function loader() {
     pool.query(`
       SELECT count() as c 
       FROM tasks 
-      WHERE last_error IS NOT NULL 
+      WHERE last_error != ''
         AND started_at > dateadd('h', -24, now())
     `),
   ]);
