@@ -27,14 +27,14 @@ func (p StateParameter) String(defaultValue ...string) string {
 
 // Int returns the int value of the parameter
 func (p StateParameter) Int(defaultValue ...int) int {
-	i, ok := p.value.(int)
+	i, ok := p.value.(float64)
 	if !ok {
 		if len(defaultValue) > 0 {
 			return defaultValue[0]
 		}
 		return 0
 	}
-	return i
+	return int(i)
 }
 
 // Float returns the float value of the parameter
