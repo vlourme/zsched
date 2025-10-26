@@ -1,4 +1,4 @@
-import { AlertTriangleIcon, CheckIcon } from "lucide-react";
+import { AlertTriangleIcon, CheckIcon, Loader2Icon } from "lucide-react";
 import { Link, redirect, useLoaderData, useSearchParams } from "react-router";
 import { MessageQueueCard } from "~/components/message-queue-card";
 import { NewTaskDialog } from "~/components/new-task-dialog";
@@ -183,9 +183,9 @@ export default function Task() {
         <MessageQueueCard data={queue.message_stats} />
       </div>
 
-      <div className="bg-foreground/5 rounded-lg">
-        <div className="flex flex-wrap items-center p-4 gap-4">
-          <h2 className="text-lg font-bold">Executions</h2>
+      <Card className="pb-0 pt-4 gap-4">
+        <CardHeader className="flex flex-row justify-between items-center">
+          <CardTitle>Executions</CardTitle>
           <NewTaskDialog />
 
           <div className="md:flex-1"></div>
@@ -207,8 +207,8 @@ export default function Task() {
               View more
             </Button>
           ) : null}
-        </div>
-        <div className="border-t">
+        </CardHeader>
+        <CardContent className="p-0 border-t">
           <Table>
             <TableHeader>
               <TableRow className="bg-foreground/5">
@@ -234,8 +234,10 @@ export default function Task() {
                   <TableCell className="px-4 py-2 w-8">
                     {execution.last_error ? (
                       <AlertTriangleIcon className="size-4 text-red-500" />
-                    ) : (
+                    ) : execution.ended_at ? (
                       <CheckIcon className="size-4 text-green-500" />
+                    ) : (
+                      <Loader2Icon className="size-4 animate-spin text-yellow-500" />
                     )}
                   </TableCell>
                   <TableCell className="px-4 py-2">
@@ -269,8 +271,8 @@ export default function Task() {
               ))}
             </TableBody>
           </Table>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </>
   );
 }
