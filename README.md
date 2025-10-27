@@ -9,7 +9,7 @@ A lightweight, opinionated mix of a queue system and task orchestrator built in 
 ## ✨ Features
 
 - **Queue System**: Built on LavinMQ (AMQP 0.9.1) for reliable message delivery
-- **Cron Scheduling**: Second-precision cron expressions for precise task timing
+- **Cron Scheduling**: Dispatch tasks at specific times, with parameters
 - **Retry Logic**: Configurable retry mechanisms for handling task failures
 - **Concurrency Control**: Fine-grained control over task execution concurrency
 - **Persistent Storage**: QuestDB integration for storing tasks and execution logs
@@ -30,38 +30,41 @@ go get github.com/vlourme/zsched
 1. **Define a task**:
 
 ```go
-var helloTask = task.NewTask(
-    "hello-world", // Queue name
-    func(ctx *ctx.C) error {
-        ctx.Info("Hello " + state.Get("name").String())
+var helloTask = zsched.NewTask(
+	"hello",
+	func(ctx *zsched.Context[UserCtx]) error {
+        time.Sleep(2 * time.Second) // Simulate a long running task
 
-        if ctx.Get("start_child").Bool() {
-            ctx.Execute(map[string]any{"name": "child"}, ctx.State)
-        }
+		ctx.Infoln("Hello", ctx.GetStr("name"))
 
-        return nil
-    },
-    task.WithConcurrency(10),
-    task.WithMaxRetries(3),
-    task.WithSchedule("0 * * * * *", map[string]any{"name": "John"}), // Every second
+		return nil
+	},
+	zsched.WithConcurrency(10),
+	zsched.WithMaxRetries(3),
+	zsched.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
 )
 ```
+
+_Note:_ Schedules might not be respected by the engine, it will dispatch the task and executed when workers are available. This is useful for tasks that might dispatch children tasks.
 
 2. **Create and configure the engine**:
 
 ```go
 func main() {
-    engine, err := engine.NewEngine(
-        engine.WithRabbitMQBroker("amqp://guest:guest@localhost:5672/"),
-        engine.WithQuestDBStorage("postgres://admin:quest@localhost:8812/qdb?sslmode=disable"),
-        engine.WithAPI(":8080"),
-    )
-    if err != nil {
-        panic(err)
-    }
+    userCtx := UserCtx{} // User context, can be any type
 
-    engine.Register(helloTask)
-    engine.Start()
+	engine, err := zsched.NewBuilder(userCtx).
+		WithRabbitMQBroker(os.Getenv("RABBITMQ_URL")).
+		WithQuestDBStorage(os.Getenv("QUESTDB_URL")).
+		WithHooks(&hooks.PrometheusHook{}, &hooks.TaskLoggerHook{}). // Optional hooks
+		WithAPI(":8080").
+		Build()
+	if err != nil {
+		panic(err)
+	}
+
+	engine.Register(helloTask)
+	engine.Start()
 }
 ```
 
@@ -81,7 +84,16 @@ curl -X POST http://localhost:8080/tasks/hello-world \
   -d '{"name": "John"}'
 ```
 
-### Docker support
+## 📦 Hooks
+
+Hooks are used to execute actions before and after task executions.
+
+### Available Hooks
+
+- `PrometheusHook`: Exposes Prometheus metrics for task execution.
+- `TaskLoggerHook`: Logs task executions to the database, required when using the API and Web UI.
+
+## 🐳 Docker support
 
 You will have to dockerize your tasks and the engine, we advice to follow the Dockerfile (`example/Dockerfile`) and docker-compose.yml files to get started.
 
