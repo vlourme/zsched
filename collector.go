@@ -2,7 +2,7 @@ package zsched
 
 import "context"
 
-type TaskCollectorAction func(c *Collector)
+type TaskCollectorAction func(c *Collector, userContext any)
 
 type Collector struct {
 	channel chan any

@@ -30,7 +30,7 @@ func (e *executor[T]) Publish(task *Task[T], s *State) error {
 // Consume listens for events from the broker and executes the task
 func (e *executor[T]) Consume(task *Task[T]) error {
 	if task.collectorAction != nil {
-		go task.collectorAction(task.collector)
+		go task.collectorAction(task.collector, e.userContext)
 	}
 
 	return e.broker.Consume(task.Name(), task.Concurrency, func(body []byte) error {
