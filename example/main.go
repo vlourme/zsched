@@ -5,71 +5,50 @@ import (
 	"os"
 	"time"
 
-	"github.com/vlourme/zsched/pkg/ctx"
-	"github.com/vlourme/zsched/pkg/engine"
+	"github.com/vlourme/zsched"
 	"github.com/vlourme/zsched/pkg/hooks"
-	"github.com/vlourme/zsched/pkg/task"
-)
-
-var helloTask = task.NewTask(
-	"hello",
-	func(ctx *ctx.C) error {
-		uc := ctx.UserContext().(*UserCtx)
-		time.Sleep(5000 * time.Millisecond)
-
-		ctx.Infoln("Hello " + ctx.Get("name").String() + " from " + uc.Name + "!")
-
-		return nil
-	},
-	task.WithConcurrency(10),
-	task.WithMaxRetries(3),
-	// task.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
-	// task.WithSchedule("*/20 * * * * *", map[string]any{"name": "Mike"}),
-	// task.WithSchedule("*/30 * * * * *", map[string]any{"name": "Carl"}),
-)
-
-var sumTask = task.NewTask(
-	"sum",
-	func(ctx *ctx.C) error {
-		a := ctx.Get("a").Int()
-		b := ctx.Get("b").Int()
-
-		ctx.Push(a + b)
-		fmt.Println("pushed result: ", a+b)
-		return nil
-	},
-	task.WithCollector(func(collector ctx.Collector) {
-		fmt.Println("collector: ", collector)
-		total := 0
-
-		for result := range collector.Channel() {
-			total += result.(int)
-			fmt.Println("pulled result: ", result, "total: ", total)
-		}
-	}, 2),
 )
 
 type UserCtx struct {
 	Name string
 }
 
+var helloTask = zsched.NewTask(
+	"hello",
+	func(ctx *zsched.Context[UserCtx]) error {
+		time.Sleep(5000 * time.Millisecond)
+
+		ctx.Infoln("Executed", ctx.GetStr("name"))
+
+		ctx.Push(1)
+
+		return nil
+	},
+	zsched.WithCollector(func(c *zsched.Collector) {
+		total := 0
+		c.Consume(func(value any) {
+			total += value.(int)
+			fmt.Println("Value:", value, "Total:", total)
+		})
+	}),
+	zsched.WithConcurrency(10),
+	zsched.WithMaxRetries(3),
+	// zsched.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
+)
+
 func main() {
-	userCtx := UserCtx{
-		Name: "John",
-	}
+	userCtx := UserCtx{}
 
-	engine, err := engine.NewEngine(
-		engine.WithRabbitMQBroker(os.Getenv("RABBITMQ_URL")),
-		engine.WithQuestDBStorage(os.Getenv("QUESTDB_URL")),
-		engine.WithAPI(":8080"),
-		engine.WithUserContext(&userCtx),
-		engine.WithHooks(hooks.NewPrometheusHook()),
-	)
-
+	engine, err := zsched.NewBuilder(userCtx).
+		WithRabbitMQBroker(os.Getenv("RABBITMQ_URL")).
+		WithQuestDBStorage(os.Getenv("QUESTDB_URL")).
+		WithHooks(&hooks.PrometheusHook{}, &hooks.TaskLoggerHook{}).
+		WithAPI(":8080").
+		Build()
 	if err != nil {
 		panic(err)
 	}
 
-	engine.Register(helloTask, sumTask)
+	engine.Register(helloTask)
 	engine.Start()
 }

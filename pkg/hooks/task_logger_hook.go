@@ -4,16 +4,17 @@ import (
 	"log"
 	"time"
 
-	"github.com/vlourme/zsched/pkg/state"
+	"github.com/vlourme/zsched"
 	"github.com/vlourme/zsched/pkg/storage"
-	"github.com/vlourme/zsched/pkg/task"
 )
 
 type TaskLoggerHook struct {
 	storage storage.Storage
 }
 
-func NewTaskLoggerHook(storage storage.Storage) *TaskLoggerHook {
+func (h *TaskLoggerHook) Initialize(storage storage.Storage) error {
+	h.storage = storage
+
 	_, err := storage.Exec(`
 		CREATE TABLE IF NOT EXISTS tasks (
 			task_id UUID,
@@ -32,13 +33,12 @@ func NewTaskLoggerHook(storage storage.Storage) *TaskLoggerHook {
 		log.Fatalf("failed to create task logs table: %v", err)
 	}
 
-	return &TaskLoggerHook{
-		storage: storage,
-	}
+	return nil
 }
 
-func (h *TaskLoggerHook) BeforeExecute(task *task.Task, s *state.State) error {
-	if s.Status != state.StatusPending {
+func (h *TaskLoggerHook) BeforeExecute(task zsched.AnyTask, s *zsched.State) error {
+	if s.Status != zsched.StatusPending {
+		log.Printf("State is not pending, skipping")
 		return nil
 	}
 
@@ -60,8 +60,9 @@ func (h *TaskLoggerHook) BeforeExecute(task *task.Task, s *state.State) error {
 	return nil
 }
 
-func (h *TaskLoggerHook) AfterExecute(task *task.Task, s *state.State) error {
-	if s.Status != state.StatusSuccess && s.Status != state.StatusFailed {
+func (h *TaskLoggerHook) AfterExecute(task zsched.AnyTask, s *zsched.State) error {
+	if s.Status != zsched.StatusSuccess && s.Status != zsched.StatusFailed {
+		log.Printf("State is not success or failed, skipping")
 		return nil
 	}
 

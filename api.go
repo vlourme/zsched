@@ -1,4 +1,4 @@
-package api
+package zsched
 
 import (
 	"maps"
@@ -6,27 +6,36 @@ import (
 	"slices"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vlourme/zsched/pkg/task"
+	"github.com/vlourme/zsched/pkg/storage"
 )
 
-func RegisterTasks(router *gin.Engine) {
-	g := router.Group("/tasks")
-	g.GET("/", GetTasks)
-	g.GET("/:name", GetTask)
-	g.POST("/:name", PostTask)
+func newRouter[T any](tasks map[string]*Task[T], storage storage.Storage) *gin.Engine {
+	gin.SetMode(gin.ReleaseMode)
+	router := gin.Default()
+
+	router.Use(func(ctx *gin.Context) {
+		ctx.Set("tasks", tasks)
+		ctx.Set("storage", storage)
+	})
+
+	router.GET("/tasks", GetTasks[T])
+	router.GET("/tasks/:name", GetTask[T])
+	router.POST("/tasks/:name", PostTask[T])
+
+	return router
 }
 
 // GetTasks returns all tasks
-func GetTasks(c *gin.Context) {
-	tasks := c.MustGet("tasks").(map[string]*task.Task)
+func GetTasks[T any](c *gin.Context) {
+	tasks := c.MustGet("tasks").(map[string]*Task[T])
 	c.JSON(http.StatusOK, slices.Collect(maps.Values(tasks)))
 }
 
 // GetTask returns a task by name
-func GetTask(c *gin.Context) {
-	tasks := c.MustGet("tasks").(map[string]*task.Task)
+func GetTask[T any](c *gin.Context) {
+	tasks := c.MustGet("tasks").(map[string]*Task[T])
 
-	var t *task.Task
+	var t *Task[T]
 	t, ok := tasks[c.Param("name")]
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
@@ -37,8 +46,8 @@ func GetTask(c *gin.Context) {
 }
 
 // PostTask dispatches a task
-func PostTask(c *gin.Context) {
-	tasks := c.MustGet("tasks").(map[string]*task.Task)
+func PostTask[T any](c *gin.Context) {
+	tasks := c.MustGet("tasks").(map[string]*Task[T])
 	t, ok := tasks[c.Param("name")]
 	if !ok {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})

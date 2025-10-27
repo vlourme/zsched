@@ -7,8 +7,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/vlourme/zsched/pkg/state"
-	"github.com/vlourme/zsched/pkg/task"
+	"github.com/vlourme/zsched"
+	"github.com/vlourme/zsched/pkg/storage"
 )
 
 type PrometheusHook struct {
@@ -16,13 +16,13 @@ type PrometheusHook struct {
 	durationHistogram *prometheus.HistogramVec
 }
 
-func NewPrometheusHook() *PrometheusHook {
-	taskCounter := promauto.NewCounterVec(prometheus.CounterOpts{
+func (h *PrometheusHook) Initialize(storage storage.Storage) error {
+	h.taskCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "scheduler_tasks_total",
 		Help: "Total number of tasks executed",
 	}, []string{"task_name", "status"})
 
-	durationHistogram := promauto.NewHistogramVec(prometheus.HistogramOpts{
+	h.durationHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Name: "scheduler_task_duration_seconds",
 		Help: "Duration of tasks in seconds",
 	}, []string{"task_name", "status"})
@@ -32,17 +32,14 @@ func NewPrometheusHook() *PrometheusHook {
 		http.ListenAndServe(":2112", nil)
 	}()
 
-	return &PrometheusHook{
-		taskCounter:       taskCounter,
-		durationHistogram: durationHistogram,
-	}
-}
-
-func (h *PrometheusHook) BeforeExecute(task *task.Task, s *state.State) error {
 	return nil
 }
 
-func (h *PrometheusHook) AfterExecute(task *task.Task, s *state.State) error {
+func (h *PrometheusHook) BeforeExecute(task zsched.AnyTask, s *zsched.State) error {
+	return nil
+}
+
+func (h *PrometheusHook) AfterExecute(task zsched.AnyTask, s *zsched.State) error {
 	h.taskCounter.WithLabelValues(task.Name(), string(s.Status)).Inc()
 	h.durationHistogram.WithLabelValues(task.Name(), string(s.Status)).Observe(time.Since(s.StartedAt).Seconds())
 	return nil
