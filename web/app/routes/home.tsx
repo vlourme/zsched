@@ -48,6 +48,10 @@ export async function loader() {
   };
 }
 
+export const handle = {
+  title: () => "Home",
+};
+
 export default function Home() {
   const { overview, executions, errors } = useLoaderData<typeof loader>();
 
@@ -73,18 +77,10 @@ export default function Home() {
   }, [executions, errors, overview]);
 
   return (
-    <>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold">Overview</h1>
-        <p className="text-muted-foreground">
-          Welcome to the Zsched dashboard. Here you can manage your tasks and
-          see the status of your tasks.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="flex flex-col">
+      <div className="grid md:divide-x grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 border-b">
         {cards.map((card) => (
-          <Card key={card.title}>
+          <Card key={card.title} className="rounded-none bg-background">
             <CardContent>
               <CardTitle className="text-4xl font-bold">{card.value}</CardTitle>
               <CardDescription>{card.title}</CardDescription>
@@ -93,11 +89,11 @@ export default function Home() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid md:divide-x grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 border-b">
         <GlobalMessagesCard data={overview} />
         <MessageQueueCard data={overview.message_stats} />
         <DataRateCard data={overview} />
       </div>
-    </>
+    </div>
   );
 }

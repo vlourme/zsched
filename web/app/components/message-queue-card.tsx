@@ -85,7 +85,7 @@ export function MessageQueueCard({ data }: { data: MessageStats }) {
   } satisfies ChartConfig;
 
   return (
-    <Card>
+    <Card className="rounded-none bg-background">
       <CardHeader>
         <CardTitle>Message rates</CardTitle>
         <CardDescription>Message rates for the queue.</CardDescription>

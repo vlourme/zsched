@@ -1,4 +1,10 @@
-import { AlertTriangleIcon, CheckIcon, Loader2Icon } from "lucide-react";
+import {
+  AlertTriangleIcon,
+  ArrowRightIcon,
+  CheckIcon,
+  ClockIcon,
+  Loader2Icon,
+} from "lucide-react";
 import { Link, redirect, useLoaderData, useSearchParams } from "react-router";
 import { MessageQueueCard } from "~/components/message-queue-card";
 import { NewTaskDialog } from "~/components/new-task-dialog";
@@ -67,15 +73,17 @@ export async function loader({ params, request: req }: Route.LoaderArgs) {
       `
       SELECT 
         task_id, 
+        status,
         parent_id, 
+        published_at,
         started_at, 
         ended_at,
-        started_at::long as cursor, 
+        published_at::long as cursor, 
         last_error, 
         (ended_at - started_at) / 1000 as duration
       FROM tasks
-      WHERE task_name = $1 ${after ? `AND started_at <= $2` : ""}
-      ORDER BY started_at DESC
+      WHERE task_name = $1 ${after ? `AND published_at <= $2` : ""}
+      ORDER BY published_at DESC
       LIMIT 100
       `,
       [params.name, after]
@@ -91,23 +99,33 @@ export async function loader({ params, request: req }: Route.LoaderArgs) {
   };
 }
 
+export const handle = {
+  title: () => "Task Details",
+};
+
+export function StatusIcon({ status }: { status: string }) {
+  switch (status) {
+    case "pending":
+      return <ClockIcon className="size-4 text-gray-400" />;
+    case "running":
+      return <Loader2Icon className="size-4 animate-spin text-yellow-500" />;
+    case "success":
+      return <CheckIcon className="size-4 text-green-500" />;
+    case "failed":
+      return <AlertTriangleIcon className="size-4 text-red-500" />;
+  }
+}
+
 export default function Task() {
   const { task, stats, executions, queue } = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
 
   return (
-    <>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold">{task.name}</h1>
-        <p className="text-muted-foreground">
-          Task details and message statistics.
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
+    <div className="flex flex-col">
+      <div className="grid md:divide-x grid-cols-1 md:grid-cols-2">
+        <Card className="rounded-none bg-background">
           <CardHeader>
-            <CardTitle>Task details</CardTitle>
+            <CardTitle>{task.name}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -133,7 +151,7 @@ export default function Task() {
               </div>
               <div className="flex flex-col w-36 gap-1">
                 <p className="text-sm text-muted-foreground">Total errors</p>
-                <p className="text-sm">{stats.total_err}</p>
+                <p className="text-sm">{stats.total_err ?? 0}</p>
               </div>
               <div className="flex flex-col w-36 gap-1">
                 <p className="text-sm text-muted-foreground">Pending</p>
@@ -153,126 +171,139 @@ export default function Task() {
                 </p>
               </div>
             </div>
-            <div className="mt-4">
-              <h2 className="text-lg font-bold">Schedules</h2>
-              <div className="flex flex-col mt-2 gap-2">
-                {task.schedules.map((schedule: any) => (
-                  <Card key={schedule.schedule}>
-                    <CardContent className="flex flex-wrap gap-1">
-                      <div className="flex flex-col w-36 gap-1">
-                        <p className="text-sm text-muted-foreground">
-                          Schedule
-                        </p>
-                        <p className="text-sm">{schedule.schedule}</p>
-                      </div>
-                      <div className="flex flex-col w-36 gap-1">
-                        <p className="text-sm text-muted-foreground">
-                          Parameters
-                        </p>
-                        <p className="text-sm">
-                          <pre>{JSON.stringify(schedule.parameters)}</pre>
-                        </p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+            {task.schedules.length > 0 ? (
+              <div className="mt-4">
+                <h2 className="text-lg font-bold">Schedules</h2>
+                <div className="flex flex-col mt-2 gap-2">
+                  {task.schedules.map((schedule: any) => (
+                    <Card key={schedule.schedule} className="border py-3.5">
+                      <CardContent className="flex flex-wrap gap-1">
+                        <div className="flex flex-col w-36 gap-1">
+                          <p className="text-sm text-muted-foreground">
+                            Schedule
+                          </p>
+                          <p className="text-sm">{schedule.schedule}</p>
+                        </div>
+                        <div className="flex flex-col w-36 gap-1">
+                          <p className="text-sm text-muted-foreground">
+                            Parameters
+                          </p>
+                          <p className="text-sm">
+                            <pre>{JSON.stringify(schedule.parameters)}</pre>
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
+            ) : null}
           </CardContent>
         </Card>
         <MessageQueueCard data={queue.message_stats} />
       </div>
 
-      <Card className="pb-0 pt-4 gap-4">
-        <CardHeader className="flex flex-row justify-between items-center">
-          <CardTitle>Executions</CardTitle>
-          <NewTaskDialog />
+      <div className="px-4 border-t py-2.5 gap-2 flex flex-row justify-between items-center">
+        <p>Executions</p>
+        <NewTaskDialog />
 
-          <div className="md:flex-1"></div>
+        <div className="md:flex-1"></div>
 
-          <p>
-            {executions.length} out of {stats.total_exec} executions
-          </p>
-          {executions.length == 100 ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                setSearchParams({
-                  ...Object.fromEntries(searchParams.entries()),
-                  after: executions[executions.length - 1]?.cursor.toString(),
-                });
-              }}
-            >
-              View more
-            </Button>
-          ) : null}
-        </CardHeader>
-        <CardContent className="p-0 border-t">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-foreground/5">
-                <TableHead className="px-4 py-2">Status</TableHead>
-                <TableHead className="px-4 py-2">Task ID</TableHead>
-                <TableHead className="px-4 py-2">Parent ID</TableHead>
-                <TableHead className="px-4 py-2">Started At</TableHead>
-                <TableHead className="px-4 py-2">Ended At</TableHead>
-                <TableHead className="px-4 py-2">Duration</TableHead>
+        <p>
+          {executions.length} out of {stats.total_exec} executions
+        </p>
+        {executions.length == 100 ? (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setSearchParams({
+                ...Object.fromEntries(searchParams.entries()),
+                after: executions[executions.length - 1]?.cursor.toString(),
+              });
+            }}
+          >
+            View more
+          </Button>
+        ) : null}
+      </div>
+
+      <div className="border-t">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-foreground/5">
+              <TableHead className="px-6 py-4">Status</TableHead>
+              <TableHead className="px-6 py-4">Task ID</TableHead>
+              <TableHead className="px-6 py-4">Parent ID</TableHead>
+              <TableHead className="px-6 py-4">Started At</TableHead>
+              <TableHead className="px-6 py-4">Ended At</TableHead>
+              <TableHead className="px-6 py-4">Duration</TableHead>
+              <TableHead className="px-6 py-4 w-10"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {executions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} className="h-24 text-center">
+                  No executions found.
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {executions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-24 text-center">
-                    No executions found.
-                  </TableCell>
-                </TableRow>
-              ) : null}
+            ) : null}
 
-              {executions.map((execution: any) => (
-                <TableRow key={execution.task_id}>
-                  <TableCell className="px-4 py-2 w-8">
-                    {execution.last_error ? (
-                      <AlertTriangleIcon className="size-4 text-red-500" />
-                    ) : execution.ended_at ? (
-                      <CheckIcon className="size-4 text-green-500" />
-                    ) : (
-                      <Loader2Icon className="size-4 animate-spin text-yellow-500" />
-                    )}
+            {executions.map((execution: any) => (
+              <TableRow key={execution.task_id}>
+                <TableCell className="px-6 py-4 w-8">
+                  <StatusIcon status={execution.status ?? "pending"} />
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  <Link
+                    className="text-blue-500 hover:underline font-bold"
+                    to={`/logs/${execution.task_id}`}
+                  >
+                    {execution.task_id}
+                  </Link>
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  {execution.parent_id ===
+                  "00000000-0000-0000-0000-000000000000"
+                    ? "None"
+                    : execution.parent_id}
+                </TableCell>
+                {execution.status === "pending" ? (
+                  <TableCell colSpan={2} className="px-6 py-4">
+                    {new Date(execution.published_at).toLocaleString()}
                   </TableCell>
-                  <TableCell className="px-4 py-2">
-                    <Link
-                      className="text-blue-500 hover:underline"
-                      to={`/logs/${execution.task_id}`}
-                    >
-                      {execution.task_id}
-                    </Link>
-                  </TableCell>
-                  <TableCell className="px-4 py-2">
-                    {execution.parent_id ===
-                    "00000000-0000-0000-0000-000000000000"
-                      ? "None"
-                      : execution.parent_id}
-                  </TableCell>
-                  <TableCell className="px-4 py-2">
-                    {new Date(execution.started_at).toLocaleString()}
-                  </TableCell>
-                  <TableCell className="px-4 py-2">
-                    {execution.ended_at
-                      ? new Date(execution.ended_at).toLocaleString()
-                      : "Running..."}
-                  </TableCell>
-                  <TableCell className="px-4 py-2">
-                    {execution.duration
+                ) : (
+                  <>
+                    <TableCell className="px-6 py-4">
+                      {new Date(execution.started_at).toLocaleString()}
+                    </TableCell>
+                    <TableCell className="px-6 py-4">
+                      {execution.ended_at
+                        ? new Date(execution.ended_at).toLocaleString()
+                        : ""}
+                    </TableCell>
+                  </>
+                )}
+                <TableCell className="px-6 py-4">
+                  {execution.status === "pending"
+                    ? "Planned"
+                    : execution.duration
                       ? formatDuration(execution.duration / 1000)
-                      : "Running..."}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </>
+                      : "Running"}
+                </TableCell>
+                <TableCell className="px-6 py-4 w-10">
+                  <Link to={`/logs/${execution.task_id}`}>
+                    <Button variant="outline" size="icon">
+                      <ArrowRightIcon className="size-4" />
+                    </Button>
+                  </Link>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </div>
   );
 }

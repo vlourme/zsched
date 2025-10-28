@@ -43,7 +43,7 @@ export function DataRateCard({ data }: { data: MQOverview }) {
   };
 
   return (
-    <Card>
+    <Card className="rounded-none bg-background">
       <CardHeader>
         <CardTitle>Data Rate</CardTitle>
         <CardDescription>Data rate for the queue.</CardDescription>

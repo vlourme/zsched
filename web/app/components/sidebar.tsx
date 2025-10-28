@@ -31,7 +31,7 @@ export function AppSidebar() {
     return location.pathname === to;
   };
   return (
-    <Sidebar>
+    <Sidebar className="group-data-[side=left]:border-r-0">
       <SidebarHeader>
         <div className="flex items-center gap-3 p-2">
           <div className="size-10 rounded-full bg-border flex items-center justify-center font-bold">

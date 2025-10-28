@@ -44,7 +44,7 @@ export function GlobalMessagesCard({ data }: { data: MQOverview }) {
   };
 
   return (
-    <Card>
+    <Card className="rounded-none bg-background">
       <CardHeader>
         <CardTitle>Messages</CardTitle>
         <CardDescription>Total messages in the queue.</CardDescription>

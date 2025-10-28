@@ -1,4 +1,5 @@
 import { Editor } from "@monaco-editor/react";
+import { PlusIcon, SendIcon } from "lucide-react";
 import { useState } from "react";
 import { Form } from "react-router";
 import { Button } from "./ui/button";
@@ -21,7 +22,8 @@ export function NewTaskDialog() {
   return (
     <Dialog open={open} onOpenChange={(open) => setOpen(open)}>
       <DialogTrigger asChild>
-        <Button size="sm" variant="outline">
+        <Button size="sm">
+          <PlusIcon className="size-4" />
           New Task
         </Button>
       </DialogTrigger>
@@ -44,7 +46,7 @@ export function NewTaskDialog() {
             <Label htmlFor="message-2">Parameters</Label>
             <input type="hidden" name="parameters" value={parameters} />
             <Editor
-              className="rounded-md overflow-hidden"
+              className="rounded-sm overflow-hidden"
               language="json"
               defaultValue={parameters}
               onChange={(value) => setParameters(value)}
@@ -58,7 +60,10 @@ export function NewTaskDialog() {
               height="20vh"
             />
           </div>
-          <Button type="submit">Create</Button>
+          <Button type="submit">
+            <SendIcon className="size-4" />
+            Submit
+          </Button>
         </Form>
       </DialogContent>
     </Dialog>

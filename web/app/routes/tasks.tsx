@@ -1,13 +1,25 @@
+import { ArrowRightIcon } from "lucide-react";
 import { Link, useLoaderData } from "react-router";
 import { Button } from "~/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { request } from "~/lib/lavinmq";
 import type { Queue } from "~/types/mq-queues";
 import type { Route } from "./+types/tasks";
 
+export const handle = {
+  title: () => "Tasks",
+};
+
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Zsched - Tasks" },
+    { title: "Tasks" },
     {
       name: "description",
       content: "Zsched is a task scheduler built for Go applications.",
@@ -26,45 +38,42 @@ export async function loader() {
   };
 }
 
-function TaskCard({ task, queue }: { task: any; queue: Queue }) {
+function TaskRow({ task, queue }: { task: any; queue: Queue }) {
+  const successRate = queue.message_stats.ack_details.rate;
+  const errorRate =
+    queue.message_stats.redeliver_details.rate +
+    queue.message_stats.reject_details.rate;
+  const pending = queue.ready + queue.unacked;
   return (
-    <Card className="gap-2">
-      <CardHeader className="flex flex-row justify-between">
-        <CardTitle>{task.name}</CardTitle>
+    <TableRow key={task.name}>
+      <TableCell className="px-6 py-4 text-blue-500 hover:underline font-bold">
         <Link
-          to={`/tasks/${task.name}?vhost=${encodeURIComponent(queue.vhost)}`}
+          to={{
+            pathname: `/tasks/${task.name}`,
+            search: `?vhost=${queue.vhost}`,
+          }}
         >
-          <Button variant="outline">View</Button>
+          {task.name}
         </Link>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-wrap gap-2">
-          <div className="flex flex-col w-36 gap-1">
-            <p className="text-sm text-muted-foreground">Concurrency</p>
-            <p className="text-sm">{task.concurrency}</p>
-          </div>
-          <div className="flex flex-col w-36 gap-1">
-            <p className="text-sm text-muted-foreground">Max Retries</p>
-            <p className="text-sm">{task.max_retries}</p>
-          </div>
-          <div className="flex flex-col w-36 gap-1">
-            <p className="text-sm text-muted-foreground">Pending</p>
-            <p className="text-sm">{queue.ready + queue.unacked}</p>
-          </div>
-          <div className="flex flex-col w-36 gap-1">
-            <p className="text-sm text-muted-foreground">Success rate</p>
-            <p className="text-sm">{queue.message_stats.ack_details.rate}</p>
-          </div>
-          <div className="flex flex-col w-36 gap-1">
-            <p className="text-sm text-muted-foreground">Error rate</p>
-            <p className="text-sm">
-              {queue.message_stats.redeliver_details.rate +
-                queue.message_stats.reject_details.rate}
-            </p>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+      </TableCell>
+      <TableCell className="px-6 py-4">{task.concurrency}</TableCell>
+      <TableCell className="px-6 py-4">{task.max_retries}</TableCell>
+      <TableCell className="px-6 py-4">{pending}</TableCell>
+      <TableCell className="px-6 py-4">{successRate}</TableCell>
+      <TableCell className="px-6 py-4">{errorRate}</TableCell>
+      <TableCell className="px-6 py-4 text-right">
+        <Link
+          to={{
+            pathname: `/tasks/${task.name}`,
+            search: `?vhost=${queue.vhost}`,
+          }}
+        >
+          <Button variant="outline" size="icon">
+            <ArrowRightIcon className="size-4" />
+          </Button>
+        </Link>
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -77,22 +86,28 @@ export default function Tasks() {
 
   return (
     <>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold">Tasks</h1>
-        <p className="text-muted-foreground">
-          Here you can manage your tasks and see the status of your tasks.
-        </p>
-      </div>
-
-      <div className="flex flex-col gap-4 rounded-xl overflow-x-auto">
-        {tasks.map((task: any) => (
-          <TaskCard
-            key={task.name}
-            task={task}
-            queue={getQueue(task.name) as Queue}
-          />
-        ))}
-      </div>
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-foreground/5">
+            <TableHead className="px-6 py-4">Name</TableHead>
+            <TableHead className="px-6 py-4">Concurrency</TableHead>
+            <TableHead className="px-6 py-4">Max Retries</TableHead>
+            <TableHead className="px-6 py-4">Pending</TableHead>
+            <TableHead className="px-6 py-4">Success rate</TableHead>
+            <TableHead className="px-6 py-4">Error rate</TableHead>
+            <TableHead className="px-6 py-4" />
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {tasks.map((task: any) => (
+            <TaskRow
+              key={task.name}
+              task={task}
+              queue={getQueue(task.name) as Queue}
+            />
+          ))}
+        </TableBody>
+      </Table>
     </>
   );
 }

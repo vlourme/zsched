@@ -48,17 +48,16 @@ export async function loader({ params }: Route.LoaderArgs) {
   };
 }
 
+export const handle = {
+  title: () => "Logs",
+};
+
 export default function Logs() {
   const { logs, parameters } = useLoaderData<typeof loader>();
 
   return (
     <>
-      <div className="flex flex-col gap-1">
-        <h1 className="text-3xl font-bold">Logs</h1>
-        <p className="text-muted-foreground">Logs for the task.</p>
-      </div>
-
-      <Card>
+      <Card className="rounded-none bg-background">
         <CardHeader>
           <CardTitle>Task parameters</CardTitle>
           <CardDescription>
@@ -72,47 +71,40 @@ export default function Logs() {
         </CardContent>
       </Card>
 
-      <Card className="pb-0 gap-4">
-        <CardHeader>
-          <CardTitle>Logs</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader>
-              <TableRow className="bg-foreground/5">
-                <TableHead className="px-4 py-2">State ID</TableHead>
-                <TableHead className="px-4 py-2">Level</TableHead>
-                <TableHead className="px-4 py-2">Message</TableHead>
-                <TableHead className="px-4 py-2">Data</TableHead>
-                <TableHead className="px-4 py-2">Logged At</TableHead>
+      <Table className="border-t">
+        <TableHeader>
+          <TableRow className="bg-foreground/5">
+            <TableHead className="px-6 py-4">State ID</TableHead>
+            <TableHead className="px-6 py-4">Level</TableHead>
+            <TableHead className="px-6 py-4">Message</TableHead>
+            <TableHead className="px-6 py-4">Data</TableHead>
+            <TableHead className="px-6 py-4">Logged At</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {logs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={5} className="h-24 text-center">
+                No logs found.
+              </TableCell>
+            </TableRow>
+          ) : (
+            logs.map((log: any, idx) => (
+              <TableRow key={idx}>
+                <TableCell className="px-6 py-4">{log.state_id}</TableCell>
+                <TableCell className="px-6 py-4">{log.level}</TableCell>
+                <TableCell className="px-6 py-4">{log.message}</TableCell>
+                <TableCell className="px-6 py-4 font-mono">
+                  {log.data}
+                </TableCell>
+                <TableCell className="px-6 py-4">
+                  {new Date(log.logged_at).toLocaleString()}
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {logs.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
-                    No logs found.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                logs.map((log: any, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell className="px-4 py-2">{log.state_id}</TableCell>
-                    <TableCell className="px-4 py-2">{log.level}</TableCell>
-                    <TableCell className="px-4 py-2">{log.message}</TableCell>
-                    <TableCell className="px-4 py-2 font-mono">
-                      {log.data}
-                    </TableCell>
-                    <TableCell className="px-4 py-2">
-                      {new Date(log.logged_at).toLocaleString()}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            ))
+          )}
+        </TableBody>
+      </Table>
     </>
   );
 }
