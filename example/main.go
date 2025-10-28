@@ -15,8 +15,8 @@ type UserCtx struct {
 
 var helloTask = zsched.NewTask(
 	"hello",
-	func(ctx *zsched.Context[UserCtx]) error {
-		time.Sleep(5000 * time.Millisecond)
+	func(ctx *zsched.Context[*UserCtx]) error {
+		time.Sleep(10000 * time.Millisecond)
 
 		ctx.Infoln("Executed", ctx.GetStr("name"))
 
@@ -24,7 +24,7 @@ var helloTask = zsched.NewTask(
 
 		return nil
 	},
-	zsched.WithCollector(func(c *zsched.Collector) {
+	zsched.WithCollector(func(c *zsched.Collector, userCtx any) {
 		total := 0
 		c.Consume(func(value any) {
 			total += value.(int)
@@ -33,13 +33,15 @@ var helloTask = zsched.NewTask(
 	}),
 	zsched.WithConcurrency(10),
 	zsched.WithMaxRetries(3),
-	// zsched.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
+	zsched.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
 )
 
 func main() {
-	userCtx := UserCtx{}
+	userCtx := UserCtx{
+		Name: "John",
+	}
 
-	engine, err := zsched.NewBuilder(userCtx).
+	engine, err := zsched.NewBuilder(&userCtx).
 		WithRabbitMQBroker(os.Getenv("RABBITMQ_URL")).
 		WithQuestDBStorage(os.Getenv("QUESTDB_URL")).
 		WithHooks(&hooks.PrometheusHook{}, &hooks.TaskLoggerHook{}).

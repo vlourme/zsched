@@ -18,16 +18,18 @@ func (h *TaskLoggerHook) Initialize(storage storage.Storage) error {
 	_, err := storage.Exec(`
 		CREATE TABLE IF NOT EXISTS tasks (
 			task_id UUID,
+			status SYMBOL,
 			task_name VARCHAR,
 			parent_id UUID,
 			state VARCHAR,
 			iterations INTEGER,
+			published_at TIMESTAMP,
 			started_at TIMESTAMP,
 			ended_at TIMESTAMP,
 			last_error VARCHAR
-		) TIMESTAMP(started_at) 
+		) TIMESTAMP(published_at) 
 		PARTITION BY DAY TTL 7 DAYS
-		DEDUP UPSERT KEYS (started_at, task_id)
+		DEDUP UPSERT KEYS (published_at, task_id)
 	`)
 	if err != nil {
 		log.Fatalf("failed to create task logs table: %v", err)
@@ -37,11 +39,6 @@ func (h *TaskLoggerHook) Initialize(storage storage.Storage) error {
 }
 
 func (h *TaskLoggerHook) BeforeExecute(task zsched.AnyTask, s *zsched.State) error {
-	if s.Status != zsched.StatusPending {
-		log.Printf("State is not pending, skipping")
-		return nil
-	}
-
 	parameters, err := s.EncodeParameters()
 	if err != nil {
 		log.Printf("failed to encode parameters: %v", err)
@@ -49,9 +46,9 @@ func (h *TaskLoggerHook) BeforeExecute(task zsched.AnyTask, s *zsched.State) err
 	}
 
 	_, err = h.storage.Exec(`
-		INSERT INTO tasks (task_id, task_name, parent_id, state, iterations, started_at)
-		VALUES ($1, $2, $3, $4, $5, $6)
-	`, s.TaskID, task.Name(), s.ParentID, parameters, s.Iterations, s.InitializedAt)
+		INSERT INTO tasks (task_id, status, task_name, parent_id, state, iterations, published_at, started_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+	`, s.TaskID, s.Status, task.Name(), s.ParentID, parameters, s.Iterations, s.InitializedAt, s.StartedAt)
 	if err != nil {
 		log.Printf("failed to insert task into storage: %v", err)
 		return err
@@ -61,11 +58,6 @@ func (h *TaskLoggerHook) BeforeExecute(task zsched.AnyTask, s *zsched.State) err
 }
 
 func (h *TaskLoggerHook) AfterExecute(task zsched.AnyTask, s *zsched.State) error {
-	if s.Status != zsched.StatusSuccess && s.Status != zsched.StatusFailed {
-		log.Printf("State is not success or failed, skipping")
-		return nil
-	}
-
 	parameters, err := s.EncodeParameters()
 	if err != nil {
 		log.Printf("failed to encode parameters: %v", err)
@@ -73,9 +65,9 @@ func (h *TaskLoggerHook) AfterExecute(task zsched.AnyTask, s *zsched.State) erro
 	}
 
 	_, err = h.storage.Exec(`
-		INSERT INTO tasks (task_id, task_name, parent_id, state, iterations, started_at, ended_at, last_error)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-	`, s.TaskID, task.Name(), s.ParentID, parameters, s.Iterations, s.InitializedAt, time.Now(), s.LastError)
+		INSERT INTO tasks (task_id, status, task_name, parent_id, state, iterations, published_at, started_at, ended_at, last_error)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+	`, s.TaskID, s.Status, task.Name(), s.ParentID, parameters, s.Iterations, s.InitializedAt, s.StartedAt, time.Now(), s.LastError)
 	if err != nil {
 		log.Printf("failed to update task in storage: %v", err)
 		return err

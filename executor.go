@@ -24,6 +24,11 @@ func (e *executor[T]) Publish(task *Task[T], s *State) error {
 		return err
 	}
 
+	s.ID = uuid.New()
+	if err := e.runBeforeExecuteHooks(task, s); err != nil {
+		log.Printf("failed to run before execute hooks: %v", err)
+	}
+
 	return e.broker.Publish(body, task.Name())
 }
 
@@ -39,7 +44,7 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 			return err
 		}
 
-		s.ID = uuid.New()
+		s.Status = StatusRunning
 		s.StartedAt = time.Now()
 		s.Iterations++
 
@@ -53,7 +58,6 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 			log.Printf("failed to run before execute hooks: %v", err)
 		}
 
-		s.Status = StatusRunning
 		ctx := newContext(task, *s, e.logger, e.userContext)
 		if err := task.Action(ctx); err != nil && (task.MaxRetries == -1 || s.Iterations < task.MaxRetries) {
 			e.logger.WithError(err).WithField("task_name", task.Name()).Print("task errored")
