@@ -5,6 +5,7 @@ import {
   ClockIcon,
   Loader2Icon,
 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, redirect, useLoaderData, useSearchParams } from "react-router";
 import { MessageQueueCard } from "~/components/message-queue-card";
 import { NewTaskDialog } from "~/components/new-task-dialog";
@@ -19,7 +20,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { pool } from "~/lib/db";
-import { formatDuration } from "~/lib/formatters";
+import { formatDuration, getDuration } from "~/lib/formatters";
 import { request } from "~/lib/lavinmq";
 import type { Route } from "./+types/task";
 
@@ -114,6 +115,70 @@ export function StatusIcon({ status }: { status: string }) {
     case "failed":
       return <AlertTriangleIcon className="size-4 text-red-500" />;
   }
+}
+
+export function ExecutionRow({ execution }: { execution: any }) {
+  const [now, setNow] = useState(new Date().getTime());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date().getTime()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const duration = useMemo(() => {
+    return getDuration(new Date(execution.started_at + "Z").getTime(), now);
+  }, [execution.started_at, now]);
+
+  return (
+    <TableRow key={execution.task_id}>
+      <TableCell className="px-6 py-4 w-8">
+        <StatusIcon status={execution.status ?? "pending"} />
+      </TableCell>
+      <TableCell className="px-6 py-4">
+        <Link
+          className="text-blue-500 hover:underline font-bold"
+          to={`/logs/${execution.task_id}`}
+        >
+          {execution.task_id}
+        </Link>
+      </TableCell>
+      <TableCell className="px-6 py-4">
+        {execution.parent_id === "00000000-0000-0000-0000-000000000000"
+          ? "None"
+          : execution.parent_id}
+      </TableCell>
+      {execution.status === "pending" ? (
+        <TableCell colSpan={2} className="px-6 py-4">
+          {new Date(execution.published_at).toLocaleString()}
+        </TableCell>
+      ) : (
+        <>
+          <TableCell className="px-6 py-4">
+            {new Date(execution.started_at).toLocaleString()}
+          </TableCell>
+          <TableCell className="px-6 py-4">
+            {execution.ended_at
+              ? new Date(execution.ended_at).toLocaleString()
+              : ""}
+          </TableCell>
+        </>
+      )}
+      <TableCell className="px-6 py-4">
+        {execution.status === "pending"
+          ? "Planned"
+          : execution.duration
+            ? formatDuration(execution.duration / 1000)
+            : duration}
+      </TableCell>
+      <TableCell className="px-6 py-4 w-10">
+        <Link to={`/logs/${execution.task_id}`}>
+          <Button variant="outline" size="icon">
+            <ArrowRightIcon className="size-4" />
+          </Button>
+        </Link>
+      </TableCell>
+    </TableRow>
+  );
 }
 
 export default function Task() {
@@ -250,56 +315,8 @@ export default function Task() {
               </TableRow>
             ) : null}
 
-            {executions.map((execution: any) => (
-              <TableRow key={execution.task_id}>
-                <TableCell className="px-6 py-4 w-8">
-                  <StatusIcon status={execution.status ?? "pending"} />
-                </TableCell>
-                <TableCell className="px-6 py-4">
-                  <Link
-                    className="text-blue-500 hover:underline font-bold"
-                    to={`/logs/${execution.task_id}`}
-                  >
-                    {execution.task_id}
-                  </Link>
-                </TableCell>
-                <TableCell className="px-6 py-4">
-                  {execution.parent_id ===
-                  "00000000-0000-0000-0000-000000000000"
-                    ? "None"
-                    : execution.parent_id}
-                </TableCell>
-                {execution.status === "pending" ? (
-                  <TableCell colSpan={2} className="px-6 py-4">
-                    {new Date(execution.published_at).toLocaleString()}
-                  </TableCell>
-                ) : (
-                  <>
-                    <TableCell className="px-6 py-4">
-                      {new Date(execution.started_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="px-6 py-4">
-                      {execution.ended_at
-                        ? new Date(execution.ended_at).toLocaleString()
-                        : ""}
-                    </TableCell>
-                  </>
-                )}
-                <TableCell className="px-6 py-4">
-                  {execution.status === "pending"
-                    ? "Planned"
-                    : execution.duration
-                      ? formatDuration(execution.duration / 1000)
-                      : "Running"}
-                </TableCell>
-                <TableCell className="px-6 py-4 w-10">
-                  <Link to={`/logs/${execution.task_id}`}>
-                    <Button variant="outline" size="icon">
-                      <ArrowRightIcon className="size-4" />
-                    </Button>
-                  </Link>
-                </TableCell>
-              </TableRow>
+            {executions.map((execution: any, idx: number) => (
+              <ExecutionRow key={idx} execution={execution} />
             ))}
           </TableBody>
         </Table>

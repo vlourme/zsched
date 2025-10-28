@@ -12,3 +12,7 @@ export const formatDuration = (duration: number) => {
 
   return parts.join(" ");
 };
+
+export const getDuration = (start: number, end: number = Date.now()) => {
+  return formatDuration((end - start) / 1000);
+};
