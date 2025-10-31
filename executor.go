@@ -59,17 +59,22 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 		}
 
 		ctx := newContext(task, *s, e.logger, e.userContext)
-		if err := task.Action(ctx); err != nil && (task.MaxRetries == -1 || s.Iterations < task.MaxRetries) {
-			e.logger.WithError(err).WithField("task_name", task.Name()).Print("task errored")
+		err = task.Action(ctx)
+		if err != nil {
+			ctx.WithError(err).WithField("task_name", task.Name()).Error("task finished with error")
 			s.LastError = err.Error()
 			s.Status = StatusFailed
-			if err := e.runAfterExecuteHooks(task, s); err != nil {
-				log.Printf("failed to run after execute hooks: %v", err)
+
+			if task.MaxRetries == -1 || s.Iterations < task.MaxRetries {
+				if err := e.runAfterExecuteHooks(task, s); err != nil {
+					log.Printf("failed to run after execute hooks: %v", err)
+				}
+				return e.Publish(task, s)
 			}
-			return e.Publish(task, s)
+		} else {
+			s.Status = StatusSuccess
 		}
 
-		s.Status = StatusSuccess
 		if err := e.runAfterExecuteHooks(task, s); err != nil {
 			log.Printf("failed to run after execute hooks: %v", err)
 		}
