@@ -125,3 +125,15 @@ func (s *State) GetInt(name string, defaultValue ...int) int {
 	}
 	return int(s.GetFloat(name))
 }
+
+// GetAny returns the any value of the parameter by name
+func (s *State) GetAny(name string, defaultValue ...any) any {
+	value, ok := s.Parameters[name]
+	if !ok {
+		if len(defaultValue) > 0 {
+			return defaultValue[0]
+		}
+		return nil
+	}
+	return value
+}
