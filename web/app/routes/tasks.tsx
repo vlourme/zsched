@@ -15,6 +15,7 @@ import type { Route } from "./+types/tasks";
 
 export const handle = {
   title: () => "Tasks",
+  group: "tasks",
 };
 
 export function meta({}: Route.MetaArgs) {

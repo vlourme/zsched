@@ -50,6 +50,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 
 export const handle = {
   title: () => "Logs",
+  group: "tasks",
 };
 
 export default function Logs() {

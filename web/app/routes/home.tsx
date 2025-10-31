@@ -50,6 +50,7 @@ export async function loader() {
 
 export const handle = {
   title: () => "Home",
+  group: "overview",
 };
 
 export default function Home() {

@@ -5,7 +5,6 @@ import {
   ClockIcon,
   Loader2Icon,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
 import { Link, redirect, useLoaderData, useSearchParams } from "react-router";
 import { MessageQueueCard } from "~/components/message-queue-card";
 import { NewTaskDialog } from "~/components/new-task-dialog";
@@ -20,7 +19,7 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { pool } from "~/lib/db";
-import { formatDuration, getDuration } from "~/lib/formatters";
+import { formatDuration } from "~/lib/formatters";
 import { request } from "~/lib/lavinmq";
 import type { Route } from "./+types/task";
 
@@ -81,6 +80,7 @@ export async function loader({ params, request: req }: Route.LoaderArgs) {
         ended_at,
         published_at::long as cursor, 
         last_error, 
+        iterations,
         (ended_at - started_at) / 1000 as duration
       FROM tasks
       WHERE task_name = $1 ${after ? `AND published_at <= $2` : ""}
@@ -102,6 +102,7 @@ export async function loader({ params, request: req }: Route.LoaderArgs) {
 
 export const handle = {
   title: () => "Task Details",
+  group: "tasks",
 };
 
 export function StatusIcon({ status }: { status: string }) {
@@ -118,17 +119,6 @@ export function StatusIcon({ status }: { status: string }) {
 }
 
 export function ExecutionRow({ execution }: { execution: any }) {
-  const [now, setNow] = useState(new Date().getTime());
-
-  useEffect(() => {
-    const interval = setInterval(() => setNow(new Date().getTime()), 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const duration = useMemo(() => {
-    return getDuration(new Date(execution.started_at + "Z").getTime(), now);
-  }, [execution.started_at, now]);
-
   return (
     <TableRow key={execution.task_id}>
       <TableCell className="px-6 py-4 w-8">
@@ -168,8 +158,9 @@ export function ExecutionRow({ execution }: { execution: any }) {
           ? "Planned"
           : execution.duration
             ? formatDuration(execution.duration / 1000)
-            : duration}
+            : "Running"}
       </TableCell>
+      <TableCell className="px-6 py-4">{execution.iterations ?? 0}</TableCell>
       <TableCell className="px-6 py-4 w-10">
         <Link to={`/logs/${execution.task_id}`}>
           <Button variant="outline" size="icon">
@@ -303,6 +294,7 @@ export default function Task() {
               <TableHead className="px-6 py-4">Started At</TableHead>
               <TableHead className="px-6 py-4">Ended At</TableHead>
               <TableHead className="px-6 py-4">Duration</TableHead>
+              <TableHead className="px-6 py-4">Iterations</TableHead>
               <TableHead className="px-6 py-4 w-10"></TableHead>
             </TableRow>
           </TableHeader>
