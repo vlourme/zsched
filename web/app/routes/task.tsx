@@ -1,5 +1,5 @@
 import {
-  AlertTriangleIcon,
+  AlertCircleIcon,
   ArrowRightIcon,
   CheckIcon,
   ClockIcon,
@@ -114,7 +114,7 @@ export function StatusIcon({ status }: { status: string }) {
     case "success":
       return <CheckIcon className="size-4 text-green-500" />;
     case "failed":
-      return <AlertTriangleIcon className="size-4 text-red-500" />;
+      return <AlertCircleIcon className="size-4 text-red-500" />;
   }
 }
 
