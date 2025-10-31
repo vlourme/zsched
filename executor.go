@@ -61,7 +61,7 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 		ctx := newContext(task, *s, e.logger, e.userContext)
 		err = task.Action(ctx)
 		if err != nil {
-			ctx.WithError(err).WithField("task_name", task.Name()).Error("task finished with error")
+			ctx.WithField("error", err.Error()).WithField("task_name", task.Name()).Error("task execution failed")
 			s.LastError = err.Error()
 			s.Status = StatusFailed
 
