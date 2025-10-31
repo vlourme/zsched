@@ -1,3 +1,4 @@
+import { Editor } from "@monaco-editor/react";
 import { Form, redirect, useLoaderData } from "react-router";
 import { Button } from "~/components/ui/button";
 import {
@@ -92,10 +93,21 @@ export default function Logs() {
             </Button>
           </Form>
         </CardHeader>
-        <CardContent className="max-h-96 overflow-y-auto">
-          <pre className="text-sm font-mono">
-            {JSON.stringify(parameters, null, 2)}
-          </pre>
+        <CardContent>
+          <Editor
+            className="w-full rounded-sm overflow-hidden"
+            language="json"
+            defaultValue={JSON.stringify(parameters, null, 2)}
+            theme="vs-dark"
+            options={{
+              minimap: { enabled: false },
+              padding: { top: 10, bottom: 10 },
+              lineNumbers: "off",
+              fontSize: 14,
+              readOnly: true,
+            }}
+            height="20vh"
+          />
         </CardContent>
       </Card>
 
