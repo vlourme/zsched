@@ -266,7 +266,9 @@ export default function Task() {
 
       <div className="px-4 border-t py-2.5 gap-2 flex flex-row justify-between items-center">
         <p>Executions</p>
-        <NewTaskDialog />
+        <NewTaskDialog
+          defaultParameters={JSON.stringify(task.default_parameters, null, 2)}
+        />
 
         <div className="md:flex-1"></div>
 

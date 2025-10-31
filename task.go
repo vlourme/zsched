@@ -33,6 +33,9 @@ type taskConfig struct {
 
 	// Schedules is the schedules for the task
 	Schedules []taskSchedule `json:"schedules"`
+
+	// DefaultParameters is the default parameters for the task
+	DefaultParameters map[string]any `json:"default_parameters"`
 }
 
 type Task[T any] struct {
@@ -54,11 +57,12 @@ func NewTask[T any](name string, action taskAction[T], opts ...func(*taskConfig)
 		TaskName: name,
 		Action:   action,
 		taskConfig: taskConfig{
-			collectorAction: nil,
-			collector:       nil,
-			Concurrency:     1,
-			MaxRetries:      3,
-			Schedules:       make([]taskSchedule, 0),
+			collectorAction:   nil,
+			collector:         nil,
+			Concurrency:       1,
+			MaxRetries:        3,
+			Schedules:         make([]taskSchedule, 0),
+			DefaultParameters: map[string]any{},
 		},
 	}
 
@@ -131,5 +135,12 @@ func WithSchedule(schedule string, parameters map[string]any) func(*taskConfig) 
 			Schedule:   schedule,
 			Parameters: parameters,
 		})
+	}
+}
+
+// WithDefaultParameters sets the default parameters for the task
+func WithDefaultParameters(parameters map[string]any) func(*taskConfig) {
+	return func(t *taskConfig) {
+		t.DefaultParameters = parameters
 	}
 }

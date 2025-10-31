@@ -13,9 +13,13 @@ import {
 } from "./ui/dialog";
 import { Label } from "./ui/label";
 
-export function NewTaskDialog() {
+export function NewTaskDialog({
+  defaultParameters,
+}: {
+  defaultParameters: string;
+}) {
   const [parameters, setParameters] = useState<string | undefined>(
-    '{\"name\": \"John\"}'
+    defaultParameters
   );
   const [open, setOpen] = useState(false);
 
