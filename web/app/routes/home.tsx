@@ -26,7 +26,7 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export async function loader() {
-  const [overview, executions, errors] = await Promise.all([
+  const [overview, executions, successes, errors] = await Promise.all([
     request<MQOverview>("/api/overview"),
     pool.query(`
       SELECT count() as c 
@@ -36,7 +36,13 @@ export async function loader() {
     pool.query(`
       SELECT count() as c 
       FROM tasks 
-      WHERE last_error != ''
+      WHERE status = 'success'
+        AND started_at > dateadd('h', -24, now())
+    `),
+    pool.query(`
+      SELECT count() as c 
+      FROM tasks 
+      WHERE status = 'failed'
         AND started_at > dateadd('h', -24, now())
     `),
   ]);
@@ -44,6 +50,7 @@ export async function loader() {
   return {
     overview: overview,
     executions: executions.rows[0].c || 0,
+    successes: successes.rows[0].c || 0,
     errors: errors.rows[0].c || 0,
   };
 }
@@ -54,7 +61,8 @@ export const handle = {
 };
 
 export default function Home() {
-  const { overview, executions, errors } = useLoaderData<typeof loader>();
+  const { overview, executions, successes, errors } =
+    useLoaderData<typeof loader>();
 
   const cards = useMemo(() => {
     return [
@@ -63,8 +71,8 @@ export default function Home() {
         value: executions,
       },
       {
-        title: "Errors (24h)",
-        value: errors,
+        title: "Successes / Errors (24h)",
+        value: `${successes} / ${errors}`,
       },
       {
         title: "Queues / Consumers",

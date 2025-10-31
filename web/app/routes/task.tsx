@@ -63,11 +63,12 @@ export async function loader({ params, request: req }: Route.LoaderArgs) {
       SELECT 
         count(*) as total_exec,
         MAX(started_at) as last_exec,
-        sum(CASE WHEN last_error != '' THEN 1 ELSE 0 END) as total_err
+        sum(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as total_success,
+        sum(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as total_err
       FROM tasks
-      WHERE task_name = $1
+      WHERE task_name = $1 ${after ? `AND published_at <= $2` : ""}
       `,
-      [params.name]
+      [params.name, after]
     ),
     pool.query(
       `
@@ -206,6 +207,10 @@ export default function Task() {
                 </p>
               </div>
               <div className="flex flex-col w-36 gap-1">
+                <p className="text-sm text-muted-foreground">Total successes</p>
+                <p className="text-sm">{stats.total_success ?? 0}</p>
+              </div>
+              <div className="flex flex-col w-36 gap-1">
                 <p className="text-sm text-muted-foreground">Total errors</p>
                 <p className="text-sm">{stats.total_err ?? 0}</p>
               </div>
@@ -273,10 +278,13 @@ export default function Task() {
             size="sm"
             variant="outline"
             onClick={() => {
-              setSearchParams({
-                ...Object.fromEntries(searchParams.entries()),
-                after: executions[executions.length - 1]?.cursor.toString(),
-              });
+              setSearchParams(
+                {
+                  ...Object.fromEntries(searchParams.entries()),
+                  after: executions[executions.length - 1]?.cursor.toString(),
+                },
+                { replace: true }
+              );
             }}
           >
             View more
