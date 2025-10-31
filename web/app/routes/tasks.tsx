@@ -1,4 +1,5 @@
 import { ArrowRightIcon } from "lucide-react";
+import { useMemo } from "react";
 import { Link, useLoaderData } from "react-router";
 import { Button } from "~/components/ui/button";
 import {
@@ -85,6 +86,10 @@ export default function Tasks() {
     return queues.find((queue: Queue) => queue.name === taskName);
   };
 
+  const sortedTasks = useMemo(() => {
+    return tasks.sort((a: any, b: any) => a.name.localeCompare(b.name));
+  }, [tasks]);
+
   return (
     <>
       <Table>
@@ -100,7 +105,7 @@ export default function Tasks() {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {tasks.map((task: any) => (
+          {sortedTasks.map((task: any) => (
             <TaskRow
               key={task.name}
               task={task}
