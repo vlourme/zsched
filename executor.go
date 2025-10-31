@@ -19,12 +19,12 @@ type executor[T any] struct {
 
 // Publish publishes the task to the broker
 func (e *executor[T]) Publish(task *Task[T], s *State) error {
+	s.ID = uuid.New()
 	body, err := s.Serialize()
 	if err != nil {
 		return err
 	}
 
-	s.ID = uuid.New()
 	if err := e.runBeforeExecuteHooks(task, s); err != nil {
 		log.Printf("failed to run before execute hooks: %v", err)
 	}
