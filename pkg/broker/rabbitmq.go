@@ -28,9 +28,11 @@ func NewRabbitMQBroker(url string) (*RabbitMQBroker, error) {
 }
 
 func (b *RabbitMQBroker) Publish(body []byte, routingKey ...string) error {
-	return b.publisher.Publish(body, routingKey, func(o *rabbitmq.PublishOptions) {
-		o.ContentType = "application/json"
-	})
+	return b.publisher.Publish(
+		body,
+		routingKey,
+		rabbitmq.WithPublishOptionsContentType("application/json"),
+	)
 }
 
 func (b *RabbitMQBroker) Consume(queue string, concurrency int, handler func(body []byte) error) error {

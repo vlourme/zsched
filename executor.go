@@ -69,7 +69,10 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 				if err := e.runAfterExecuteHooks(task, s); err != nil {
 					log.Printf("failed to run after execute hooks: %v", err)
 				}
-				return e.Publish(task, s)
+				if err := e.Publish(task, s); err != nil {
+					log.Printf("failed to re-publish task: %v", err)
+				}
+				return err
 			}
 		} else {
 			s.Status = StatusSuccess
