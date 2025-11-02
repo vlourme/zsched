@@ -47,7 +47,7 @@ export async function loader({ params }: Route.LoaderArgs) {
 
   return {
     task: task.rows[0].task_name,
-    parameters: JSON.parse(task.rows[0].state),
+    parameters: task.rows[0].state,
     logs: logs.rows,
   };
 }
@@ -135,7 +135,7 @@ export default function Logs() {
                 <TableCell className="px-6 py-4">{log.level}</TableCell>
                 <TableCell className="px-6 py-4">{log.message}</TableCell>
                 <TableCell className="px-6 py-4 font-mono">
-                  {log.data}
+                  {JSON.stringify(log.data)}
                 </TableCell>
                 <TableCell className="px-6 py-4">
                   {new Date(log.logged_at).toLocaleString()}

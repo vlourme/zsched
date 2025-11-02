@@ -52,7 +52,10 @@ export async function loader({ params, request: req }: Route.LoaderArgs) {
     return redirect("/tasks");
   }
 
-  let after = parseInt(searchParams.get("after") ?? "0");
+  let after = null;
+  if (searchParams.get("after")) {
+    after = new Date(parseInt(searchParams.get("after") ?? "0"));
+  }
 
   const [task, stats, executions, queues] = await Promise.all([
     fetch(process.env.ZSCHED_URL + "/tasks/" + params.name).then((res) =>
@@ -68,7 +71,7 @@ export async function loader({ params, request: req }: Route.LoaderArgs) {
       FROM tasks
       WHERE task_name = $1 ${after ? `AND published_at <= $2` : ""}
       `,
-      [params.name, after]
+      ([params.name] as any[]).concat(after ? [after] : [])
     ),
     pool.query(
       `
@@ -79,16 +82,16 @@ export async function loader({ params, request: req }: Route.LoaderArgs) {
         published_at,
         started_at, 
         ended_at,
-        published_at::long as cursor, 
+        published_at as cursor, 
         last_error, 
         iterations,
-        (ended_at - started_at) / 1000 as duration
+        EXTRACT(EPOCH FROM (ended_at - started_at)) as duration
       FROM tasks
       WHERE task_name = $1 ${after ? `AND published_at <= $2` : ""}
       ORDER BY published_at DESC
       LIMIT 100
       `,
-      [params.name, after]
+      ([params.name] as any[]).concat(after ? [after] : [])
     ),
     request<any>(`/api/queues/${encodeURIComponent(vhost)}/${params.name}`),
   ]);
@@ -158,7 +161,7 @@ export function ExecutionRow({ execution }: { execution: any }) {
         {execution.status === "pending"
           ? "Planned"
           : execution.duration
-            ? formatDuration(execution.duration / 1000)
+            ? formatDuration(execution.duration)
             : "Running"}
       </TableCell>
       <TableCell className="px-6 py-4">{execution.iterations ?? 0}</TableCell>
@@ -283,7 +286,7 @@ export default function Task() {
               setSearchParams(
                 {
                   ...Object.fromEntries(searchParams.entries()),
-                  after: executions[executions.length - 1]?.cursor.toString(),
+                  after: executions[executions.length - 1]?.cursor.getTime(),
                 },
                 { replace: true }
               );

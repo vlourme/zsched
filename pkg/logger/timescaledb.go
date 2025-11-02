@@ -9,31 +9,42 @@ import (
 	"github.com/vlourme/zsched/pkg/storage"
 )
 
-type QuestDBHook struct {
+type TimescaleDBHook struct {
 	storage storage.Storage
 }
 
-func NewQuestDBHook(storage storage.Storage) *QuestDBHook {
+func NewTimescaleDBHook(storage storage.Storage) *TimescaleDBHook {
 	_, err := storage.Exec(`
 		CREATE TABLE IF NOT EXISTS logs (
 			task_id UUID,
 			state_id UUID,
-			level SYMBOL,
-			message VARCHAR,
-			data VARCHAR,
-			logged_at TIMESTAMP
+			level VARCHAR(10),
+			message TEXT,
+			data JSONB,
+			logged_at TIMESTAMPTZ,
+			PRIMARY KEY (task_id, state_id, logged_at)
 		)
-		TIMESTAMP(logged_at)
-		PARTITION BY DAY TTL 7 DAYS
+		WITH (
+			tsdb.hypertable,
+			tsdb.partition_column='logged_at',
+			tsdb.orderby='logged_at DESC'
+		)
 	`)
 	if err != nil {
 		log.Fatalf("failed to create logs table: %v", err)
 	}
 
-	return &QuestDBHook{storage}
+	_, err = storage.Exec(
+		`SELECT add_retention_policy('logs', drop_after => INTERVAL '7 days', if_not_exists => true)`,
+	)
+	if err != nil {
+		log.Fatalf("failed to create retention policy: %v", err)
+	}
+
+	return &TimescaleDBHook{storage}
 }
 
-func (h *QuestDBHook) Fire(entry *logrus.Entry) error {
+func (h *TimescaleDBHook) Fire(entry *logrus.Entry) error {
 	taskId, ok := entry.Data["task_id"]
 	if !ok {
 		return nil
@@ -63,7 +74,7 @@ func (h *QuestDBHook) Fire(entry *logrus.Entry) error {
 	return err
 }
 
-func (h *QuestDBHook) Levels() []logrus.Level {
+func (h *TimescaleDBHook) Levels() []logrus.Level {
 	return []logrus.Level{
 		logrus.InfoLevel,
 		logrus.WarnLevel,

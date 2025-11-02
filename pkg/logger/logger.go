@@ -16,8 +16,8 @@ func NewLogger(storage storage.Storage) Logger {
 		FullTimestamp:   true,
 	})
 
-	if storage.Name() == "questdb" {
-		logger.AddHook(NewQuestDBHook(storage))
+	if storage.Name() == "timescaledb" {
+		logger.AddHook(NewTimescaleDBHook(storage))
 	}
 
 	return logrus.NewEntry(logger)

@@ -52,14 +52,13 @@ func (b *builder[T]) WithStorage(storage storage.Storage) *builder[T] {
 	return b
 }
 
-// WithQuestDBStorage sets the QuestDB storage for the engine
-func (b *builder[T]) WithQuestDBStorage(url string) *builder[T] {
-	storage, err := storage.NewQuestDBStorage(url)
+// WithTimescaleDBStorage sets the TimescaleDB storage for the engine
+func (b *builder[T]) WithTimescaleDBStorage(url string) *builder[T] {
+	storage, err := storage.NewTimescaleDBStorage(url)
 	if err != nil {
 		b.err = err
 		return b
 	}
-
 	return b.WithStorage(storage)
 }
 

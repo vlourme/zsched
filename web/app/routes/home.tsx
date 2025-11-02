@@ -29,21 +29,21 @@ export async function loader() {
   const [overview, executions, successes, errors] = await Promise.all([
     request<MQOverview>("/api/overview"),
     pool.query(`
-      SELECT count() as c 
+      SELECT count(*) as c 
       FROM tasks 
-      WHERE started_at > dateadd('h', -24, now())
+      WHERE started_at > NOW() - INTERVAL '24 hours'
     `),
     pool.query(`
-      SELECT count() as c 
+      SELECT count(*) as c 
       FROM tasks 
       WHERE status = 'success'
-        AND started_at > dateadd('h', -24, now())
+        AND started_at > NOW() - INTERVAL '24 hours'
     `),
     pool.query(`
-      SELECT count() as c 
+      SELECT count(*) as c 
       FROM tasks 
       WHERE status = 'failed'
-        AND started_at > dateadd('h', -24, now())
+        AND started_at > NOW() - INTERVAL '24 hours'
     `),
   ]);
 

@@ -7,41 +7,40 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
-type QuestDBStorage struct {
+type TimescaleDBStorage struct {
 	conn *sql.DB
 }
 
-// NewQuestDBStorage creates a new QuestDB storage
-// QuestDB is based on PostgreSQL protocol.
-func NewQuestDBStorage(dsn string) (*QuestDBStorage, error) {
+// NewTimescaleDBStorage creates a new TimescaleDB storage.
+func NewTimescaleDBStorage(dsn string) (*TimescaleDBStorage, error) {
 	conn, err := sql.Open("pgx", dsn)
 	if err != nil {
 		return nil, err
 	}
 
-	return &QuestDBStorage{conn}, nil
+	return &TimescaleDBStorage{conn}, nil
 }
 
-func (s *QuestDBStorage) Close() error {
+func (s *TimescaleDBStorage) Close() error {
 	return s.conn.Close()
 }
 
-func (s *QuestDBStorage) Exec(query string, args ...any) (sql.Result, error) {
+func (s *TimescaleDBStorage) Exec(query string, args ...any) (sql.Result, error) {
 	return s.conn.Exec(query, args...)
 }
 
-func (s *QuestDBStorage) Query(query string, args ...any) (*sql.Rows, error) {
+func (s *TimescaleDBStorage) Query(query string, args ...any) (*sql.Rows, error) {
 	return s.conn.Query(query, args...)
 }
 
-func (s *QuestDBStorage) QueryRow(query string, args ...any) *sql.Row {
+func (s *TimescaleDBStorage) QueryRow(query string, args ...any) *sql.Row {
 	return s.conn.QueryRow(query, args...)
 }
 
-func (s *QuestDBStorage) Connection() (*sql.Conn, error) {
+func (s *TimescaleDBStorage) Connection() (*sql.Conn, error) {
 	return s.conn.Conn(context.Background())
 }
 
-func (s *QuestDBStorage) Name() string {
-	return "questdb"
+func (s *TimescaleDBStorage) Name() string {
+	return "timescaledb"
 }

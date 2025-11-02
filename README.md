@@ -2,7 +2,7 @@
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/vlourme/zsched.svg)](https://pkg.go.dev/github.com/vlourme/zsched)
 
-A lightweight, opinionated mix of a queue system and task orchestrator built in and for Go, using QuestDB and AMQP broker. Designed for simplicity and performance.
+A lightweight, opinionated mix of a queue system and task orchestrator built in and for Go, using TimescaleDB and AMQP broker. Designed for simplicity and performance.
 
 ![Web UI](media/screenshot.png)
 
@@ -12,7 +12,7 @@ A lightweight, opinionated mix of a queue system and task orchestrator built in 
 - **Cron Scheduling**: Dispatch tasks at specific times, with parameters
 - **Retry Logic**: Configurable retry mechanisms for handling task failures
 - **Concurrency Control**: Fine-grained control over task execution concurrency
-- **Persistent Storage**: QuestDB integration for storing tasks and execution logs
+- **Persistent Storage**: TimescaleDB integration for storing tasks and execution logs
 - **REST API**: Complete HTTP API for task dispatch and log retrieval
 - **Web Dashboard**: Clean, lightweight UI for task management and monitoring
 - **Hooks**: Execute actions before and after task executions, including **Prometheus** metrics
@@ -55,7 +55,7 @@ func main() {
 
 	engine, err := zsched.NewBuilder(userCtx).
 		WithRabbitMQBroker(os.Getenv("RABBITMQ_URL")).
-		WithQuestDBStorage(os.Getenv("QUESTDB_URL")).
+		WithTimescaleDBStorage(os.Getenv("POSTGRES_URL")).
 		WithHooks(&hooks.PrometheusHook{}, &hooks.TaskLoggerHook{}). // Optional hooks
 		WithAPI(":8080").
 		Build()
