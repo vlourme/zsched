@@ -80,9 +80,8 @@ function TaskRow({ task, queue }: { task: any; queue: Queue }) {
       </TableCell>
       <TableCell className="px-6 py-4">
         <div className="flex flex-wrap gap-1.5">
-          {task.tags.map((tag: string) => (
-            <Tag key={tag} tag={tag} />
-          ))}
+          {task.tags &&
+            task.tags.map((tag: string) => <Tag key={tag} tag={tag} />)}
         </div>
       </TableCell>
       <TableCell className="px-6 py-4">{task.concurrency}</TableCell>

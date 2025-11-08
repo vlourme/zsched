@@ -66,6 +66,7 @@ func NewTask[T any](name string, action taskAction[T], opts ...func(*taskConfig)
 			MaxRetries:        3,
 			Schedules:         make([]taskSchedule, 0),
 			DefaultParameters: map[string]any{},
+			Tags:              make([]string, 0),
 		},
 	}
 
