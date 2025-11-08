@@ -36,6 +36,9 @@ type taskConfig struct {
 
 	// DefaultParameters is the default parameters for the task
 	DefaultParameters map[string]any `json:"default_parameters"`
+
+	// Tags is the tags for the task
+	Tags []string `json:"tags"`
 }
 
 type Task[T any] struct {
@@ -142,5 +145,12 @@ func WithSchedule(schedule string, parameters map[string]any) func(*taskConfig) 
 func WithDefaultParameters(parameters map[string]any) func(*taskConfig) {
 	return func(t *taskConfig) {
 		t.DefaultParameters = parameters
+	}
+}
+
+// WithTags sets the tags for the task
+func WithTags(tags ...string) func(*taskConfig) {
+	return func(t *taskConfig) {
+		t.Tags = tags
 	}
 }

@@ -10,6 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { stringToColor } from "~/lib/color";
 import { request } from "~/lib/lavinmq";
 import type { Queue } from "~/types/mq-queues";
 import type { Route } from "./+types/tasks";
@@ -40,6 +41,17 @@ export async function loader() {
   };
 }
 
+function Tag({ tag }: { tag: string }) {
+  return (
+    <span
+      className="px-2 py-0.5 rounded-sm text-sm font-medium text-white"
+      style={{ backgroundColor: stringToColor(tag) }}
+    >
+      {tag}
+    </span>
+  );
+}
+
 function TaskRow({ task, queue }: { task: any; queue: Queue }) {
   const successRate = queue.message_stats.ack_details.rate;
   const errorRate =
@@ -57,6 +69,13 @@ function TaskRow({ task, queue }: { task: any; queue: Queue }) {
         >
           {task.name}
         </Link>
+      </TableCell>
+      <TableCell className="px-6 py-4">
+        <div className="flex flex-wrap gap-1.5">
+          {task.tags.map((tag: string) => (
+            <Tag key={tag} tag={tag} />
+          ))}
+        </div>
       </TableCell>
       <TableCell className="px-6 py-4">{task.concurrency}</TableCell>
       <TableCell className="px-6 py-4">{task.max_retries}</TableCell>
@@ -96,6 +115,7 @@ export default function Tasks() {
         <TableHeader>
           <TableRow className="bg-foreground/5">
             <TableHead className="px-6 py-4">Name</TableHead>
+            <TableHead className="px-6 py-4">Tags</TableHead>
             <TableHead className="px-6 py-4">Concurrency</TableHead>
             <TableHead className="px-6 py-4">Max Retries</TableHead>
             <TableHead className="px-6 py-4">Pending</TableHead>
