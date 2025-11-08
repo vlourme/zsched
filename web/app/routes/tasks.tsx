@@ -61,14 +61,22 @@ function TaskRow({ task, queue }: { task: any; queue: Queue }) {
   return (
     <TableRow key={task.name}>
       <TableCell className="px-6 py-4 text-blue-500 hover:underline font-bold">
-        <Link
-          to={{
-            pathname: `/tasks/${task.name}`,
-            search: `?vhost=${queue.vhost}`,
-          }}
-        >
-          {task.name}
-        </Link>
+        <div className="flex flex-row items-baseline gap-1.5">
+          {queue.state === "running" ? (
+            <div className="size-2 bg-green-500 border border-green-400 rounded-full"></div>
+          ) : null}
+          {queue.state === "paused" ? (
+            <div className="size-2 bg-yellow-500 border border-yellow-400 rounded-full"></div>
+          ) : null}
+          <Link
+            to={{
+              pathname: `/tasks/${task.name}`,
+              search: `?vhost=${queue.vhost}`,
+            }}
+          >
+            {task.name}
+          </Link>
+        </div>
       </TableCell>
       <TableCell className="px-6 py-4">
         <div className="flex flex-wrap gap-1.5">

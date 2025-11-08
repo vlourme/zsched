@@ -5,9 +5,16 @@ import {
   ClockIcon,
   Loader2Icon,
 } from "lucide-react";
-import { Link, redirect, useLoaderData, useSearchParams } from "react-router";
+import {
+  Form,
+  Link,
+  redirect,
+  useLoaderData,
+  useSearchParams,
+} from "react-router";
 import { MessageQueueCard } from "~/components/message-queue-card";
 import { NewTaskDialog } from "~/components/new-task-dialog";
+import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import {
@@ -33,8 +40,35 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export async function action({ request, params }: Route.ActionArgs) {
-  const formData = await request.formData();
+export async function action({ request: req, params }: Route.ActionArgs) {
+  const formData = await req.formData();
+
+  if (formData.get("state")) {
+    const vhost = new URLSearchParams(req.url.split("?")[1]).get("vhost");
+    if (!vhost) {
+      return redirect("/tasks");
+    }
+
+    if (formData.get("state") === "paused") {
+      const r = await request<any>(
+        `/api/queues/${encodeURIComponent(vhost)}/${params.name}/pause`,
+        {
+          method: "PUT",
+        },
+        "text"
+      );
+    } else if (formData.get("state") === "running") {
+      await request<any>(
+        `/api/queues/${encodeURIComponent(vhost)}/${params.name}/resume`,
+        {
+          method: "PUT",
+        },
+        "text"
+      );
+    }
+    return;
+  }
+
   const parameters = formData.get("parameters");
 
   await fetch(process.env.ZSCHED_URL + "/tasks/" + params.name, {
@@ -184,8 +218,14 @@ export default function Task() {
     <div className="flex flex-col">
       <div className="grid md:divide-x grid-cols-1 md:grid-cols-2">
         <Card className="rounded-none bg-background">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center gap-2">
             <CardTitle>{task.name}</CardTitle>
+            <Badge
+              variant={queue.state === "running" ? "default" : "secondary"}
+              className="capitalize"
+            >
+              {queue.state}
+            </Badge>
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -272,6 +312,17 @@ export default function Task() {
         <NewTaskDialog
           defaultParameters={JSON.stringify(task.default_parameters, null, 2)}
         />
+
+        <Form method="post">
+          <input
+            type="hidden"
+            name="state"
+            value={queue.state === "running" ? "paused" : "running"}
+          />
+          <Button variant="outline">
+            {queue.state === "running" ? "Pause queue" : "Resume queue"}
+          </Button>
+        </Form>
 
         <div className="md:flex-1"></div>
 

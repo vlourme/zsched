@@ -6,7 +6,8 @@
  */
 export const request = async <T>(
   url: string,
-  options?: RequestInit
+  options?: RequestInit,
+  responseType: "json" | "text" = "json"
 ): Promise<T> => {
   const response = await fetch(process.env.LAVINMQ_API + url, {
     ...(options || {}),
@@ -15,5 +16,12 @@ export const request = async <T>(
       Authorization: `Basic ${btoa(process.env.LAVINMQ_USERNAME + ":" + process.env.LAVINMQ_PASSWORD)}`,
     },
   });
-  return response.json() as T;
+
+  if (responseType === "json") {
+    return response.json() as T;
+  } else if (responseType === "text") {
+    return response.text() as T;
+  }
+
+  throw new Error("Invalid response type");
 };
