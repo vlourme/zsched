@@ -42,27 +42,37 @@ export function meta({}: Route.MetaArgs) {
 
 export async function action({ request: req, params }: Route.ActionArgs) {
   const formData = await req.formData();
+  const vhost = new URLSearchParams(req.url.split("?")[1]).get("vhost");
+  if (!vhost) {
+    return redirect("/tasks");
+  }
+
+  if (formData.get("action") === "purge") {
+    await Promise.all([
+      request<any>(
+        `/api/queues/${encodeURIComponent(vhost)}/${params.name}/contents`,
+        { method: "DELETE" },
+        "text"
+      ),
+      pool.query(
+        `DELETE FROM tasks WHERE task_name = $1 AND status IN ('pending', 'running')`,
+        [params.name]
+      ),
+    ]);
+    return;
+  }
 
   if (formData.get("state")) {
-    const vhost = new URLSearchParams(req.url.split("?")[1]).get("vhost");
-    if (!vhost) {
-      return redirect("/tasks");
-    }
-
     if (formData.get("state") === "paused") {
-      const r = await request<any>(
+      await request<any>(
         `/api/queues/${encodeURIComponent(vhost)}/${params.name}/pause`,
-        {
-          method: "PUT",
-        },
+        { method: "PUT" },
         "text"
       );
     } else if (formData.get("state") === "running") {
       await request<any>(
         `/api/queues/${encodeURIComponent(vhost)}/${params.name}/resume`,
-        {
-          method: "PUT",
-        },
+        { method: "PUT" },
         "text"
       );
     }
@@ -322,6 +332,11 @@ export default function Task() {
           <Button variant="outline">
             {queue.state === "running" ? "Pause queue" : "Resume queue"}
           </Button>
+        </Form>
+
+        <Form method="post">
+          <input type="hidden" name="action" value="purge" />
+          <Button variant="destructive">Purge queue</Button>
         </Form>
 
         <div className="md:flex-1"></div>
