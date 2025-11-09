@@ -4,6 +4,9 @@
 
 A lightweight, opinionated mix of a queue system and task orchestrator built in and for Go, using TimescaleDB and AMQP broker. Designed for simplicity and performance.
 
+> [!CAUTION]
+> Until v2 is released, the SDK is not considered stable and breaking changes might happen.
+
 ![Web UI](media/screenshot.png)
 
 ## ✨ Features
