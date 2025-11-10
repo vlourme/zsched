@@ -11,25 +11,34 @@ import (
 
 // Executor is the executor for the tasks
 type executor[T any] struct {
+	taskLogger  *taskLogger[T]
 	broker      broker.Broker
 	logger      logger.Logger
 	hooks       []Hook
 	userContext T
 }
 
-// Publish publishes the task to the broker
-func (e *executor[T]) Publish(task *Task[T], s *State) error {
-	s.ID = uuid.New()
-	body, err := s.Serialize()
+// Publish publishes one or many executions to the broker
+func (e *executor[T]) Publish(task *Task[T], state *State) error {
+	state.ID = uuid.New()
+	body, err := state.Serialize()
 	if err != nil {
 		return err
 	}
 
-	if err := e.runBeforeExecuteHooks(task, s); err != nil {
+	if err := e.taskLogger.LogTasks(task, state); err != nil {
+		log.Printf("failed to log execution: %v", err)
+	}
+
+	if err := e.runBeforeExecuteHooks(task, state); err != nil {
 		log.Printf("failed to run before execute hooks: %v", err)
 	}
 
-	return e.broker.Publish(body, task.Name())
+	if err := e.broker.Publish(body, task.Name()); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Consume listens for events from the broker and executes the task
@@ -54,6 +63,10 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 			}
 		}()
 
+		if err := e.taskLogger.LogTasks(task, s); err != nil {
+			log.Printf("failed to log execution: %v", err)
+		}
+
 		if err := e.runBeforeExecuteHooks(task, s); err != nil {
 			log.Printf("failed to run before execute hooks: %v", err)
 		}
@@ -66,6 +79,9 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 			s.Status = StatusFailed
 
 			if task.MaxRetries == -1 || s.Iterations < task.MaxRetries {
+				if err := e.taskLogger.LogTasks(task, s); err != nil {
+					log.Printf("failed to log execution: %v", err)
+				}
 				if err := e.runAfterExecuteHooks(task, s); err != nil {
 					log.Printf("failed to run after execute hooks: %v", err)
 				}
@@ -78,6 +94,9 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 			s.Status = StatusSuccess
 		}
 
+		if err := e.taskLogger.LogTasks(task, s); err != nil {
+			log.Printf("failed to log execution: %v", err)
+		}
 		if err := e.runAfterExecuteHooks(task, s); err != nil {
 			log.Printf("failed to run after execute hooks: %v", err)
 		}

@@ -77,25 +77,16 @@ func NewTask[T any](name string, action taskAction[T], opts ...func(*taskConfig)
 	return t
 }
 
-// Execute executes the task
+// Execute executes one or multiple executions of the task
 func (t *Task[T]) Execute(params ...map[string]any) error {
-	var p map[string]any
-	if len(params) > 0 {
-		p = params[0]
+	for _, p := range params {
+		state := newState(p)
+		if err := t.executor.Publish(t, state); err != nil {
+			return err
+		}
 	}
 
-	return t.ExecuteWithState(p)
-}
-
-// ExecuteWithState executes the task with a parent state
-func (t *Task[T]) ExecuteWithState(params map[string]any, parentId ...*State) error {
-	s := newState(params)
-
-	if len(parentId) > 0 {
-		s.ParentID = parentId[0].TaskID
-	}
-
-	return t.executor.Publish(t, s)
+	return nil
 }
 
 // formatName formats the name of the task to a valid RabbitMQ queue name

@@ -41,7 +41,13 @@ func (e *Engine[T]) Register(task ...*Task[T]) {
 func (e *Engine[T]) Start() error {
 	e.logger.Info("Starting engine...")
 
+	taskLogger, err := NewTaskLogger[T](e.storage)
+	if err != nil {
+		return errors.Join(errors.New("failed to create task logger"), err)
+	}
+
 	e.executor = &executor[T]{
+		taskLogger:  taskLogger,
 		broker:      e.broker,
 		logger:      e.logger,
 		hooks:       e.hooks,

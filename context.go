@@ -30,12 +30,7 @@ func newContext[T any](task *Task[T], state State, logger logger.Logger, userCon
 
 // Execute starts the same task with given parameters
 func (c *Context[T]) Execute(params ...map[string]any) error {
-	var p map[string]any
-	if len(params) > 0 {
-		p = params[0]
-	}
-
-	return c.task.ExecuteWithState(p, &c.State)
+	return c.task.Execute(params...)
 }
 
 // Push pushes a value to the collector

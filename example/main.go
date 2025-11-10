@@ -1,7 +1,6 @@
 package main
 
 import (
-	"errors"
 	"math/rand"
 	"os"
 	"time"
@@ -18,18 +17,15 @@ type UserCtx struct {
 var helloTask = zsched.NewTask(
 	"hello",
 	func(ctx *zsched.Context[*UserCtx]) error {
-		time.Sleep(time.Duration(rand.Intn(1000)) * time.Millisecond)
+		time.Sleep(time.Duration(rand.Intn(3000)) * time.Millisecond)
 
 		ctx.Infoln("Hello", ctx.GetStr("name"))
-
-		if rand.Intn(100) < 30 {
-			return errors.New("random error")
-		}
 
 		return nil
 	},
 	zsched.WithConcurrency(10),
 	zsched.WithMaxRetries(3),
+	zsched.WithTags("stockx"),
 	// zsched.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
 	// zsched.WithDefaultParameters(map[string]any{
 	// 	"name": "World",
@@ -44,6 +40,7 @@ var dispatchTask = zsched.NewTask(
 		}
 		return nil
 	},
+	zsched.WithTags("goat"),
 	zsched.WithDefaultParameters(map[string]any{
 		"count": 10,
 	}),
@@ -59,7 +56,7 @@ func main() {
 	engine, err := zsched.NewBuilder(&userCtx).
 		WithRabbitMQBroker(os.Getenv("RABBITMQ_URL")).
 		WithTimescaleDBStorage(os.Getenv("POSTGRES_URL")).
-		WithHooks(&hooks.PrometheusHook{}, &hooks.TaskLoggerHook{}).
+		WithHooks(&hooks.PrometheusHook{}).
 		WithAPI(":8080").
 		Build()
 	if err != nil {
