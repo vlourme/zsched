@@ -269,7 +269,9 @@ export default function Task() {
               </div>
               <div className="flex flex-col w-36 gap-1">
                 <p className="text-sm text-muted-foreground">Pending</p>
-                <p className="text-sm">{queue.ready + queue.unacked}</p>
+                <p className="text-sm">
+                  {queue.messages_ready + queue.messages_unacknowledged}
+                </p>
               </div>
               <div className="flex flex-col w-36 gap-1">
                 <p className="text-sm text-muted-foreground">Success rate</p>

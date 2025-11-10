@@ -57,7 +57,7 @@ function TaskRow({ task, queue }: { task: any; queue: Queue }) {
   const errorRate =
     queue.message_stats.redeliver_details.rate +
     queue.message_stats.reject_details.rate;
-  const pending = queue.ready + queue.unacked;
+  const pending = queue.messages_ready + queue.messages_unacknowledged;
   return (
     <TableRow key={task.name}>
       <TableCell className="px-6 py-4 text-blue-500 hover:underline font-bold">

@@ -11,11 +11,11 @@ export interface Queue {
   messages: number;
   total_bytes: number;
   messages_persistent: number;
-  ready: number;
-  ready_bytes: number;
+  messages_ready: number;
+  messages_ready_bytes: number;
   ready_avg_bytes: number;
-  unacked: number;
-  unacked_bytes: number;
+  messages_unacknowledged: number;
+  messages_unacknowledged_bytes: number;
   unacked_avg_bytes: number;
   operator_policy: any;
   policy: any;
