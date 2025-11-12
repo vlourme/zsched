@@ -14,6 +14,7 @@ import {
 } from "react-router";
 import { MessageQueueCard } from "~/components/message-queue-card";
 import { NewTaskDialog } from "~/components/new-task-dialog";
+import { SchedulesDialog } from "~/components/schedules-dialog";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
@@ -236,6 +237,9 @@ export default function Task() {
             >
               {queue.state}
             </Badge>
+            {task.schedules.length > 0 && (
+              <SchedulesDialog schedules={task.schedules} />
+            )}
           </CardHeader>
           <CardContent>
             <div className="flex flex-wrap gap-2">
@@ -245,7 +249,9 @@ export default function Task() {
               </div>
               <div className="flex flex-col w-36 gap-1">
                 <p className="text-sm text-muted-foreground">Max Retries</p>
-                <p className="text-sm">{task.max_retries}</p>
+                <p className="text-sm">
+                  {task.max_retries === -1 ? "∞" : task.max_retries}
+                </p>
               </div>
               <div className="flex flex-col w-36 gap-1">
                 <p className="text-sm text-muted-foreground">
@@ -287,33 +293,6 @@ export default function Task() {
                 </p>
               </div>
             </div>
-            {task.schedules.length > 0 ? (
-              <div className="mt-4">
-                <h2 className="text-lg font-bold">Schedules</h2>
-                <div className="flex flex-col mt-2 gap-2">
-                  {task.schedules.map((schedule: any) => (
-                    <Card key={schedule.schedule} className="border py-3.5">
-                      <CardContent className="flex flex-wrap gap-1">
-                        <div className="flex flex-col w-36 gap-1">
-                          <p className="text-sm text-muted-foreground">
-                            Schedule
-                          </p>
-                          <p className="text-sm">{schedule.schedule}</p>
-                        </div>
-                        <div className="flex flex-col w-36 gap-1">
-                          <p className="text-sm text-muted-foreground">
-                            Parameters
-                          </p>
-                          <p className="text-sm">
-                            <pre>{JSON.stringify(schedule.parameters)}</pre>
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </CardContent>
         </Card>
         <MessageQueueCard data={queue.message_stats} />

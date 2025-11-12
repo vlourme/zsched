@@ -85,7 +85,9 @@ function TaskRow({ task, queue }: { task: any; queue: Queue }) {
         </div>
       </TableCell>
       <TableCell className="px-6 py-4">{task.concurrency}</TableCell>
-      <TableCell className="px-6 py-4">{task.max_retries}</TableCell>
+      <TableCell className="px-6 py-4">
+        {task.max_retries === -1 ? "∞" : task.max_retries}
+      </TableCell>
       <TableCell className="px-6 py-4">{pending}</TableCell>
       <TableCell className="px-6 py-4">{successRate}</TableCell>
       <TableCell className="px-6 py-4">{errorRate}</TableCell>
