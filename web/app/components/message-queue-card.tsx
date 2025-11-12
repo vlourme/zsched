@@ -1,7 +1,9 @@
-import { useMemo } from "react";
+import { scaleSymlog } from "d3-scale";
+import { useMemo, useState } from "react";
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { zip } from "~/lib/zip";
 import type { MessageStats } from "~/types/mq-overview";
+import { Button } from "./ui/button";
 import {
   Card,
   CardContent,
@@ -84,11 +86,23 @@ export function MessageQueueCard({ data }: { data: MessageStats }) {
     },
   } satisfies ChartConfig;
 
+  const [logarithmicScale, setLogarithmicScale] = useState<boolean>(false);
+  const logScale = scaleSymlog();
+
   return (
     <Card className="rounded-none bg-background">
-      <CardHeader>
-        <CardTitle>Message rates</CardTitle>
-        <CardDescription>Message rates for the queue.</CardDescription>
+      <CardHeader className="flex flex-row justify-between items-center">
+        <div>
+          <CardTitle>Message rates</CardTitle>
+          <CardDescription>Message rates for the queue.</CardDescription>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setLogarithmicScale(!logarithmicScale)}
+        >
+          {logarithmicScale ? "Linear scale" : "Logarithmic scale"}
+        </Button>
       </CardHeader>
       <CardContent className="pl-0">
         <ChartContainer config={chartConfig}>
@@ -109,7 +123,7 @@ export function MessageQueueCard({ data }: { data: MessageStats }) {
               textAnchor="end"
               textRendering="geometricPrecision"
             />
-            <YAxis />
+            <YAxis scale={logarithmicScale ? logScale : "auto"} min={0} />
             <Area
               type="monotone"
               dataKey="ack"
