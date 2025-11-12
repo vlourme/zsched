@@ -5,7 +5,7 @@ type Broker interface {
 	Publish(body []byte, routingKey ...string) error
 
 	// Consume consumes a message from the message broker
-	Consume(queue string, concurrency int, handler func(body []byte) error) error
+	Consume(queue string, autoAck bool, concurrency int, handler func(body []byte) error) error
 
 	// Close closes the connection to the message broker
 	Close() error

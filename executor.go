@@ -47,62 +47,67 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 		go task.collectorAction(task.collector, e.userContext)
 	}
 
-	return e.broker.Consume(task.Name(), task.Concurrency, func(body []byte) error {
-		s, err := deserializeState(body)
-		if err != nil {
-			return err
-		}
-
-		s.Status = StatusRunning
-		s.StartedAt = time.Now()
-		s.Iterations++
-
-		defer func() {
-			if r := recover(); r != nil {
-				log.Printf("recovered from a panic: [%s]%s: %v", task.Name(), s.ID, r)
-			}
-		}()
-
-		if err := e.taskLogger.LogTasks(task, s); err != nil {
-			log.Printf("failed to log execution: %v", err)
-		}
-
-		if err := e.runBeforeExecuteHooks(task, s); err != nil {
-			log.Printf("failed to run before execute hooks: %v", err)
-		}
-
-		ctx := newContext(task, *s, e.logger, e.userContext)
-		err = task.Action(ctx)
-		if err != nil {
-			ctx.WithField("error", err.Error()).WithField("task_name", task.Name()).Error("task execution failed")
-			s.LastError = err.Error()
-			s.Status = StatusFailed
-
-			if task.MaxRetries == -1 || s.Iterations < task.MaxRetries {
-				if err := e.taskLogger.LogTasks(task, s); err != nil {
-					log.Printf("failed to log execution: %v", err)
-				}
-				if err := e.runAfterExecuteHooks(task, s); err != nil {
-					log.Printf("failed to run after execute hooks: %v", err)
-				}
-				if err := e.Publish(task, s); err != nil {
-					log.Printf("failed to re-publish task: %v", err)
-				}
+	return e.broker.Consume(
+		task.Name(),
+		task.MaxRetries == 0, // prevent re-shipping on broker restart
+		task.Concurrency,
+		func(body []byte) error {
+			s, err := deserializeState(body)
+			if err != nil {
 				return err
 			}
-		} else {
-			s.Status = StatusSuccess
-		}
 
-		if err := e.taskLogger.LogTasks(task, s); err != nil {
-			log.Printf("failed to log execution: %v", err)
-		}
-		if err := e.runAfterExecuteHooks(task, s); err != nil {
-			log.Printf("failed to run after execute hooks: %v", err)
-		}
+			s.Status = StatusRunning
+			s.StartedAt = time.Now()
+			s.Iterations++
 
-		return nil
-	})
+			defer func() {
+				if r := recover(); r != nil {
+					log.Printf("recovered from a panic: [%s]%s: %v", task.Name(), s.ID, r)
+				}
+			}()
+
+			if err := e.taskLogger.LogTasks(task, s); err != nil {
+				log.Printf("failed to log execution: %v", err)
+			}
+
+			if err := e.runBeforeExecuteHooks(task, s); err != nil {
+				log.Printf("failed to run before execute hooks: %v", err)
+			}
+
+			ctx := newContext(task, *s, e.logger, e.userContext)
+			err = task.Action(ctx)
+			if err != nil {
+				ctx.WithField("error", err.Error()).WithField("task_name", task.Name()).Error("task execution failed")
+				s.LastError = err.Error()
+				s.Status = StatusFailed
+
+				if task.MaxRetries == -1 || s.Iterations < task.MaxRetries {
+					if err := e.taskLogger.LogTasks(task, s); err != nil {
+						log.Printf("failed to log execution: %v", err)
+					}
+					if err := e.runAfterExecuteHooks(task, s); err != nil {
+						log.Printf("failed to run after execute hooks: %v", err)
+					}
+					if err := e.Publish(task, s); err != nil {
+						log.Printf("failed to re-publish task: %v", err)
+					}
+					return err
+				}
+			} else {
+				s.Status = StatusSuccess
+			}
+
+			if err := e.taskLogger.LogTasks(task, s); err != nil {
+				log.Printf("failed to log execution: %v", err)
+			}
+			if err := e.runAfterExecuteHooks(task, s); err != nil {
+				log.Printf("failed to run after execute hooks: %v", err)
+			}
+
+			return nil
+		},
+	)
 }
 
 // runBeforeExecuteHooks runs the before execute hooks

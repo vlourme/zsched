@@ -35,12 +35,13 @@ func (b *RabbitMQBroker) Publish(body []byte, routingKey ...string) error {
 	)
 }
 
-func (b *RabbitMQBroker) Consume(queue string, concurrency int, handler func(body []byte) error) error {
+func (b *RabbitMQBroker) Consume(queue string, autoAck bool, concurrency int, handler func(body []byte) error) error {
 	consumer, err := rabbitmq.NewConsumer(
 		b.connection,
 		queue,
 		rabbitmq.WithConsumerOptionsConcurrency(concurrency),
 		rabbitmq.WithConsumerOptionsQOSPrefetch(concurrency),
+		rabbitmq.WithConsumerOptionsConsumerAutoAck(autoAck),
 	)
 	if err != nil {
 		return err
