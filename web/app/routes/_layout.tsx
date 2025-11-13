@@ -5,6 +5,9 @@ import { SidebarProvider, SidebarTrigger } from "~/components/ui/sidebar";
 import { cn } from "~/lib/utils";
 
 export default function Layout() {
+  const [navbarAction, setNavbarAction] = useState<React.ReactNode | undefined>(
+    undefined
+  );
   const matches = useMatches();
   const handle = useMemo(
     () =>
@@ -32,9 +35,11 @@ export default function Layout() {
             <h1 className="text-lg font-bold pl-3">
               {handle?.title() || "Zsched"}
             </h1>
+            <div className="flex-1"></div>
+            {navbarAction && <div className="pr-1">{navbarAction}</div>}
           </div>
 
-          <Outlet />
+          <Outlet context={{ setNavbarAction }} />
         </main>
       </div>
     </SidebarProvider>

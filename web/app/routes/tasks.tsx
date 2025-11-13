@@ -1,7 +1,13 @@
 import { ArrowRightIcon } from "lucide-react";
-import { useMemo } from "react";
-import { Link, useLoaderData } from "react-router";
+import { useEffect, useMemo } from "react";
+import {
+  Link,
+  useLoaderData,
+  useOutletContext,
+  useSearchParams,
+} from "react-router";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   Table,
   TableBody,
@@ -19,6 +25,22 @@ export const handle = {
   title: () => "Tasks",
   group: "tasks",
 };
+
+function NavbarAction() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const search = searchParams.get("search");
+  return (
+    <div>
+      <Input
+        type="text"
+        placeholder="Search by name or tag"
+        value={search ?? ""}
+        className="h-8 px-3"
+        onChange={(e) => setSearchParams({ search: e.target.value })}
+      />
+    </div>
+  );
+}
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -110,13 +132,34 @@ function TaskRow({ task, queue }: { task: any; queue: Queue }) {
 export default function Tasks() {
   const { tasks, queues } = useLoaderData<typeof loader>();
 
+  const { setNavbarAction } = useOutletContext<{
+    setNavbarAction: (action: React.ReactNode | null) => void;
+  }>();
+  useEffect(() => {
+    setNavbarAction(<NavbarAction />);
+    return () => {
+      setNavbarAction(null);
+    };
+  }, []);
+
+  const [searchParams] = useSearchParams();
+  const search = searchParams.get("search");
+
   const getQueue = (taskName: string) => {
     return queues.find((queue: Queue) => queue.name === taskName);
   };
 
   const sortedTasks = useMemo(() => {
-    return tasks.sort((a: any, b: any) => a.name.localeCompare(b.name));
-  }, [tasks]);
+    const ret = tasks.sort((a: any, b: any) => a.name.localeCompare(b.name));
+    if (search && search.length > 0) {
+      return ret.filter(
+        (task: any) =>
+          task.name.includes(search) ||
+          task.tags.some((tag: string) => tag.includes(search))
+      );
+    }
+    return ret;
+  }, [tasks, searchParams]);
 
   return (
     <>
