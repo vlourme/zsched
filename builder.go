@@ -30,20 +30,15 @@ func NewBuilder[T any](userContext T) *builder[T] {
 }
 
 // WithBroker sets the broker for the engine
-func (b *builder[T]) WithBroker(broker broker.Broker) *builder[T] {
+func (b *builder[T]) WithBroker(broker broker.BrokerQueue) *builder[T] {
 	b.engine.broker = broker
 	return b
 }
 
 // WithRabbitMQBroker sets the RabbitMQ broker for the engine
 func (b *builder[T]) WithRabbitMQBroker(url string) *builder[T] {
-	broker, err := broker.NewRabbitMQBroker(url)
-	if err != nil {
-		b.err = err
-		return b
-	}
-
-	return b.WithBroker(broker)
+	b.engine.brokerUrl = url
+	return b.WithBroker(&broker.RabbitMQBroker{})
 }
 
 // WithStorage sets the storage for the engine

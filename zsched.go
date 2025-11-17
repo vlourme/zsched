@@ -14,7 +14,8 @@ import (
 
 // Engine is the main engine for Zsched scheduler
 type Engine[T any] struct {
-	broker      broker.Broker
+	broker      broker.BrokerQueue
+	brokerUrl   string
 	storage     storage.Storage
 	hooks       []Hook
 	logger      logger.Logger
@@ -22,7 +23,6 @@ type Engine[T any] struct {
 	wg          *sync.WaitGroup
 	cron        *cron.Cron
 	userContext T
-	executor    *executor[T]
 	apiAddress  string
 }
 
@@ -46,16 +46,19 @@ func (e *Engine[T]) Start() error {
 		return errors.Join(errors.New("failed to create task logger"), err)
 	}
 
-	e.executor = &executor[T]{
-		taskLogger:  taskLogger,
-		broker:      e.broker,
-		logger:      e.logger,
-		hooks:       e.hooks,
-		userContext: e.userContext,
-	}
-
 	for _, task := range e.tasks {
-		task.executor = e.executor
+		b, err := e.broker.New(e.brokerUrl, task.Name())
+		if err != nil {
+			return errors.Join(errors.New("failed to create broker queue"), err)
+		}
+
+		task.executor = &executor[T]{
+			taskLogger:  taskLogger,
+			broker:      b,
+			logger:      e.logger,
+			hooks:       e.hooks,
+			userContext: e.userContext,
+		}
 
 		for _, schedule := range task.Schedules {
 			_, err := e.cron.AddFunc(schedule.Schedule, func() {
@@ -69,7 +72,7 @@ func (e *Engine[T]) Start() error {
 		}
 
 		e.wg.Go(func() {
-			e.executor.Consume(task)
+			task.executor.Consume(task)
 		})
 	}
 

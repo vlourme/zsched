@@ -12,7 +12,7 @@ import (
 // Executor is the executor for the tasks
 type executor[T any] struct {
 	taskLogger  *taskLogger[T]
-	broker      broker.Broker
+	broker      broker.BrokerQueue
 	logger      logger.Logger
 	hooks       []Hook
 	userContext T
@@ -34,7 +34,7 @@ func (e *executor[T]) Publish(task *Task[T], state *State) error {
 		log.Printf("failed to run before execute hooks: %v", err)
 	}
 
-	if err := e.broker.Publish(body, task.Name()); err != nil {
+	if err := e.broker.Publish(body); err != nil {
 		return err
 	}
 
@@ -48,7 +48,6 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 	}
 
 	return e.broker.Consume(
-		task.Name(),
 		task.MaxRetries == 0, // prevent re-shipping on broker restart
 		task.Concurrency,
 		func(body []byte) error {
