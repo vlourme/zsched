@@ -57,7 +57,7 @@ type Task[T any] struct {
 // NewTask creates a new task
 func NewTask[T any](name string, action taskAction[T], opts ...func(*taskConfig)) *Task[T] {
 	t := &Task[T]{
-		TaskName: name,
+		TaskName: nameRegex.ReplaceAllString(name, ""),
 		Action:   action,
 		taskConfig: taskConfig{
 			collectorAction:   nil,
@@ -89,10 +89,9 @@ func (t *Task[T]) Execute(params ...map[string]any) error {
 	return nil
 }
 
-// formatName formats the name of the task to a valid RabbitMQ queue name
-// TODO: Move to a separate package
+// Name returns the name of the task
 func (t *Task[T]) Name() string {
-	return nameRegex.ReplaceAllString(t.TaskName, "")
+	return t.TaskName
 }
 
 // Collector returns the collector for the task

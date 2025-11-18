@@ -1,22 +1,29 @@
 package broker
 
 import (
+	"time"
+
 	"github.com/wagslane/go-rabbitmq"
 )
 
 type RabbitMQBroker struct {
 	connection *rabbitmq.Conn
 	publisher  *rabbitmq.Publisher
-	consumers  []*rabbitmq.Consumer
+	consumer   *rabbitmq.Consumer
+	queueName  string
 }
 
-func NewRabbitMQBroker(url string) (*RabbitMQBroker, error) {
-	conn, err := rabbitmq.NewConn(url)
+func (b *RabbitMQBroker) New(url, queueName string) (BrokerQueue, error) {
+	conn, err := rabbitmq.NewConn(
+		url,
+		rabbitmq.WithConnectionOptionsReconnectInterval(time.Second),
+		rabbitmq.WithConnectionOptionsLogging,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	publisher, err := rabbitmq.NewPublisher(conn)
+	publisher, err := rabbitmq.NewPublisher(conn, rabbitmq.WithPublisherOptionsLogging)
 	if err != nil {
 		return nil, err
 	}
@@ -24,21 +31,23 @@ func NewRabbitMQBroker(url string) (*RabbitMQBroker, error) {
 	return &RabbitMQBroker{
 		connection: conn,
 		publisher:  publisher,
+		queueName:  queueName,
 	}, nil
 }
 
-func (b *RabbitMQBroker) Publish(body []byte, routingKey ...string) error {
+func (b *RabbitMQBroker) Publish(body []byte) error {
 	return b.publisher.Publish(
 		body,
-		routingKey,
+		[]string{b.queueName},
 		rabbitmq.WithPublishOptionsContentType("application/json"),
 	)
 }
 
-func (b *RabbitMQBroker) Consume(queue string, autoAck bool, concurrency int, handler func(body []byte) error) error {
+func (b *RabbitMQBroker) Consume(autoAck bool, concurrency int, handler func(body []byte) error) error {
 	consumer, err := rabbitmq.NewConsumer(
 		b.connection,
-		queue,
+		b.queueName,
+		rabbitmq.WithConsumerOptionsLogging,
 		rabbitmq.WithConsumerOptionsConcurrency(concurrency),
 		rabbitmq.WithConsumerOptionsQOSPrefetch(concurrency),
 		rabbitmq.WithConsumerOptionsConsumerAutoAck(autoAck),
@@ -46,8 +55,7 @@ func (b *RabbitMQBroker) Consume(queue string, autoAck bool, concurrency int, ha
 	if err != nil {
 		return err
 	}
-
-	b.consumers = append(b.consumers, consumer)
+	b.consumer = consumer
 
 	return consumer.Run(func(d rabbitmq.Delivery) (action rabbitmq.Action) {
 		if err := handler(d.Body); err != nil {
@@ -60,8 +68,6 @@ func (b *RabbitMQBroker) Consume(queue string, autoAck bool, concurrency int, ha
 
 func (b *RabbitMQBroker) Close() error {
 	b.publisher.Close()
-	for _, consumer := range b.consumers {
-		consumer.Close()
-	}
+	b.consumer.Close()
 	return b.connection.Close()
 }

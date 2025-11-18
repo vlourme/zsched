@@ -26,7 +26,6 @@ var helloTask = zsched.NewTask(
 	zsched.WithConcurrency(10),
 	zsched.WithMaxRetries(3),
 	zsched.WithTags("stockx"),
-	// zsched.WithSchedule("* * * * * *", map[string]any{"name": "John"}),
 	// zsched.WithDefaultParameters(map[string]any{
 	// 	"name": "World",
 	// }),
@@ -35,15 +34,24 @@ var helloTask = zsched.NewTask(
 var dispatchTask = zsched.NewTask(
 	"dispatch",
 	func(ctx *zsched.Context[*UserCtx]) error {
+		time.Sleep(5 * time.Second)
 		for range ctx.GetInt("count", 10) {
 			helloTask.Execute(map[string]any{"name": "World"})
 		}
 		return nil
 	},
+	zsched.WithMaxRetries(0),
 	zsched.WithTags("goat"),
 	zsched.WithDefaultParameters(map[string]any{
 		"count": 10,
 	}),
+	zsched.WithSchedule("* * 0 * * *", map[string]any{"name": "John", "count": 10, "message": "Hello"}),
+	zsched.WithSchedule("* * 1 * * *", map[string]any{"name": "John", "count": 10, "message": "Hello"}),
+	zsched.WithSchedule("* * 2 * * *", map[string]any{"name": "John", "count": 10, "message": "Hello"}),
+	zsched.WithSchedule("* * 3 * * *", map[string]any{"name": "John", "count": 10, "message": "Hello"}),
+	zsched.WithSchedule("* * 4 * * *", map[string]any{"name": "John", "count": 10, "message": "Hello"}),
+	zsched.WithSchedule("* * 5 * * *", map[string]any{"name": "John", "count": 10, "message": "Hello"}),
+	zsched.WithSchedule("* * 6 * * *", map[string]any{"name": "John", "count": 10, "message": "Hello"}),
 )
 
 func main() {

@@ -12,7 +12,7 @@ import (
 // Executor is the executor for the tasks
 type executor[T any] struct {
 	taskLogger  *taskLogger[T]
-	broker      broker.Broker
+	broker      broker.BrokerQueue
 	logger      logger.Logger
 	hooks       []Hook
 	userContext T
@@ -26,16 +26,17 @@ func (e *executor[T]) Publish(task *Task[T], state *State) error {
 		return err
 	}
 
+	if err := e.broker.Publish(body); err != nil {
+		log.Printf("failed to publish task: %v", err)
+		return e.Publish(task, state)
+	}
+
 	if err := e.taskLogger.LogTasks(task, state); err != nil {
 		log.Printf("failed to log execution: %v", err)
 	}
 
 	if err := e.runBeforeExecuteHooks(task, state); err != nil {
 		log.Printf("failed to run before execute hooks: %v", err)
-	}
-
-	if err := e.broker.Publish(body, task.Name()); err != nil {
-		return err
 	}
 
 	return nil
@@ -47,8 +48,7 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 		go task.collectorAction(task.collector, e.userContext)
 	}
 
-	return e.broker.Consume(
-		task.Name(),
+	err := e.broker.Consume(
 		task.MaxRetries == 0, // prevent re-shipping on broker restart
 		task.Concurrency,
 		func(body []byte) error {
@@ -108,6 +108,13 @@ func (e *executor[T]) Consume(task *Task[T]) error {
 			return nil
 		},
 	)
+
+	if err != nil {
+		log.Printf("failed to consume task: %v", err)
+		return err
+	}
+
+	return nil
 }
 
 // runBeforeExecuteHooks runs the before execute hooks
