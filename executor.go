@@ -35,6 +35,7 @@ func (e *executor[T]) Publish(task *Task[T], state *State) error {
 	}
 
 	if err := e.broker.Publish(body); err != nil {
+		log.Printf("failed to publish task: %v", err)
 		return err
 	}
 

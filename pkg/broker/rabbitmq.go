@@ -12,12 +12,12 @@ type RabbitMQBroker struct {
 }
 
 func (b *RabbitMQBroker) New(url, queueName string) (BrokerQueue, error) {
-	conn, err := rabbitmq.NewConn(url)
+	conn, err := rabbitmq.NewConn(url, rabbitmq.WithConnectionOptionsLogging)
 	if err != nil {
 		return nil, err
 	}
 
-	publisher, err := rabbitmq.NewPublisher(conn)
+	publisher, err := rabbitmq.NewPublisher(conn, rabbitmq.WithPublisherOptionsLogging)
 	if err != nil {
 		return nil, err
 	}
@@ -41,6 +41,7 @@ func (b *RabbitMQBroker) Consume(autoAck bool, concurrency int, handler func(bod
 	consumer, err := rabbitmq.NewConsumer(
 		b.connection,
 		b.queueName,
+		rabbitmq.WithConsumerOptionsLogging,
 		rabbitmq.WithConsumerOptionsConcurrency(concurrency),
 		rabbitmq.WithConsumerOptionsQOSPrefetch(concurrency),
 		rabbitmq.WithConsumerOptionsConsumerAutoAck(autoAck),
