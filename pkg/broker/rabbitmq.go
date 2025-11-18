@@ -1,6 +1,8 @@
 package broker
 
 import (
+	"time"
+
 	"github.com/wagslane/go-rabbitmq"
 )
 
@@ -12,7 +14,11 @@ type RabbitMQBroker struct {
 }
 
 func (b *RabbitMQBroker) New(url, queueName string) (BrokerQueue, error) {
-	conn, err := rabbitmq.NewConn(url, rabbitmq.WithConnectionOptionsLogging)
+	conn, err := rabbitmq.NewConn(
+		url,
+		rabbitmq.WithConnectionOptionsReconnectInterval(time.Second),
+		rabbitmq.WithConnectionOptionsLogging,
+	)
 	if err != nil {
 		return nil, err
 	}
